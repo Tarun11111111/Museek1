@@ -34,6 +34,7 @@ builder.Services.AddAuthentication(options =>
     .AddIdentityCookies();
 
 builder.Services.AddIdentityCore<MuseekUser>(options => options.SignIn.RequireConfirmedAccount = true)
+    .AddRoles<IdentityRole>()
     .AddEntityFrameworkStores<MuseekContext>()
     .AddSignInManager()
     .AddDefaultTokenProviders();
