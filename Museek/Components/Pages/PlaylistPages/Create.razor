@@ -14,47 +14,47 @@
     <div class="col-md-4">
         <EditForm method="post" Model="Playlist" OnValidSubmit="AddPlaylist" FormName="create" Enhance>
             <DataAnnotationsValidator />
-            <ValidationSummary class="text-danger" role="alert"/>
+            <ValidationSummary class="text-danger" role="alert" />
             <div class="mb-3">
-                <label for="name" class="form-label">Name:</label> 
-                <InputText id="name" @bind-Value="Playlist.Name" class="form-control" /> 
-                <ValidationMessage For="() => Playlist.Name" class="text-danger" /> 
-            </div>        
+                <label for="name" class="form-label">Name:</label>
+                <InputText id="name" @bind-Value="Playlist.Name" class="form-control" />
+                <ValidationMessage For="() => Playlist.Name" class="text-danger" />
+            </div>
             <div class="mb-3">
-                <label for="description" class="form-label">Description:</label> 
-                <InputText id="description" @bind-Value="Playlist.Description" class="form-control" /> 
-                <ValidationMessage For="() => Playlist.Description" class="text-danger" /> 
-            </div>        
+                <label for="description" class="form-label">Description:</label>
+                <InputText id="description" @bind-Value="Playlist.Description" class="form-control" />
+                <ValidationMessage For="() => Playlist.Description" class="text-danger" />
+            </div>
             <div class="mb-3">
-                <label for="adminid" class="form-label">AdminId:</label> 
-                <InputNumber id="adminid" @bind-Value="Playlist.AdminId" class="form-control" /> 
-                <ValidationMessage For="() => Playlist.AdminId" class="text-danger" /> 
-            </div>        
+                <label for="coverimage" class="form-label">Cover Image:</label>
+                <InputText id="coverimage" @bind-Value="Playlist.Cover_Image" class="form-control" />
+                <ValidationMessage For="() => Playlist.Cover_Image" class="text-danger" />
+            </div>
             <div class="mb-3">
-                <label for="userid" class="form-label">UserId:</label> 
-                <InputNumber id="userid" @bind-Value="Playlist.UserId" class="form-control" /> 
-                <ValidationMessage For="() => Playlist.UserId" class="text-danger" /> 
-            </div>        
+                <label for="userid" class="form-label">UserId:</label>
+                <InputNumber id="userid" @bind-Value="Playlist.UserId" class="form-control" />
+                <ValidationMessage For="() => Playlist.UserId" class="text-danger" />
+            </div>
             <div class="mb-3">
-                <label for="datecreated" class="form-label">DateCreated:</label> 
-                <InputDate id="datecreated" @bind-Value="Playlist.DateCreated" class="form-control" /> 
-                <ValidationMessage For="() => Playlist.DateCreated" class="text-danger" /> 
-            </div>        
+                <label for="datecreated" class="form-label">DateCreated:</label>
+                <InputDate id="datecreated" @bind-Value="Playlist.DateCreated" class="form-control" />
+                <ValidationMessage For="() => Playlist.DateCreated" class="text-danger" />
+            </div>
             <div class="mb-3">
-                <label for="dateupdated" class="form-label">DateUpdated:</label> 
-                <InputDate id="dateupdated" @bind-Value="Playlist.DateUpdated" class="form-control" /> 
-                <ValidationMessage For="() => Playlist.DateUpdated" class="text-danger" /> 
-            </div>        
+                <label for="dateupdated" class="form-label">DateUpdated:</label>
+                <InputDate id="dateupdated" @bind-Value="Playlist.DateUpdated" class="form-control" />
+                <ValidationMessage For="() => Playlist.DateUpdated" class="text-danger" />
+            </div>
             <div class="mb-3">
-                <label for="createdby" class="form-label">CreatedBy:</label> 
-                <InputText id="createdby" @bind-Value="Playlist.CreatedBy" class="form-control" /> 
-                <ValidationMessage For="() => Playlist.CreatedBy" class="text-danger" /> 
-            </div>        
+                <label for="createdby" class="form-label">CreatedBy:</label>
+                <InputText id="createdby" @bind-Value="Playlist.CreatedBy" class="form-control" />
+                <ValidationMessage For="() => Playlist.CreatedBy" class="text-danger" />
+            </div>
             <div class="mb-3">
-                <label for="updatedby" class="form-label">UpdatedBy:</label> 
-                <InputText id="updatedby" @bind-Value="Playlist.UpdatedBy" class="form-control" /> 
-                <ValidationMessage For="() => Playlist.UpdatedBy" class="text-danger" /> 
-            </div>        
+                <label for="updatedby" class="form-label">UpdatedBy:</label>
+                <InputText id="updatedby" @bind-Value="Playlist.UpdatedBy" class="form-control" />
+                <ValidationMessage For="() => Playlist.UpdatedBy" class="text-danger" />
+            </div>
             <button type="submit" class="btn btn-primary">Create</button>
         </EditForm>
     </div>

@@ -1,18 +1,12 @@
-﻿using System;
-using System.Collections.Generic;
-using System.Linq;
-using System.Threading.Tasks;
+﻿using Microsoft.AspNetCore.Identity.EntityFrameworkCore;
 using Microsoft.EntityFrameworkCore;
-using Museek.Domain;
+using Museek.Data;
 
 namespace Museek.Data
 {
-    public class MuseekContext : DbContext
+    public class MuseekContext(DbContextOptions<MuseekContext> options) : IdentityDbContext<MuseekUser>(options)
     {
-        public MuseekContext (DbContextOptions<MuseekContext> options)
-            : base(options)
-        {
-        }
+
 
         public DbSet<Museek.Domain.Admin> Admin { get; set; } = default!;
         public DbSet<Museek.Domain.Album> Album { get; set; } = default!;
@@ -24,5 +18,6 @@ namespace Museek.Data
         public DbSet<Museek.Domain.Song> Song { get; set; } = default!;
         public DbSet<Museek.Domain.User> User { get; set; } = default!;
         public DbSet<Museek.Domain.UserSong> UserSong { get; set; } = default!;
+
     }
 }

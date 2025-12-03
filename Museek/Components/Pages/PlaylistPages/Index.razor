@@ -1,9 +1,6 @@
 ﻿@page "/playlists"
 @using Microsoft.EntityFrameworkCore
-@using Microsoft.AspNetCore.Components.QuickGrid
 @using Museek.Domain
-@using Museek.Data
-@implements IAsyncDisposable
 @inject IDbContextFactory<Museek.Data.MuseekContext> DbFactory
 
 <PageTitle>Index</PageTitle>
@@ -14,30 +11,55 @@
     <a href="playlists/create">Create New</a>
 </p>
 
-<QuickGrid Class="table" Items="context.Playlist">
-    <PropertyColumn Property="playlist => playlist.Name" />
-    <PropertyColumn Property="playlist => playlist.Description" />
-    <PropertyColumn Property="playlist => playlist.AdminId" />
-    <PropertyColumn Property="playlist => playlist.UserId" />
-    <PropertyColumn Property="playlist => playlist.DateCreated" />
-    <PropertyColumn Property="playlist => playlist.DateUpdated" />
-    <PropertyColumn Property="playlist => playlist.CreatedBy" />
-    <PropertyColumn Property="playlist => playlist.UpdatedBy" />
-
-    <TemplateColumn Context="playlist">
-        <a href="@($"playlists/edit?id={playlist.Id}")">Edit</a> |
-        <a href="@($"playlists/details?id={playlist.Id}")">Details</a> |
-        <a href="@($"playlists/delete?id={playlist.Id}")">Delete</a>
-    </TemplateColumn>
-</QuickGrid>
+@if (playlists == null)
+{
+    <p><em>Loading...</em></p>
+}
+else
+{
+    <table class="table">
+        <thead>
+            <tr>
+                <th>Name</th>
+                <th>Description</th>
+                <th>Cover Image</th>
+                <th>UserId</th>
+                <th>DateCreated</th>
+                <th>DateUpdated</th>
+                <th>CreatedBy</th>
+                <th>UpdatedBy</th>
+                <th></th>
+            </tr>
+        </thead>
+        <tbody>
+            @foreach (var playlist in playlists)
+            {
+                <tr>
+                    <td>@playlist.Name</td>
+                    <td>@playlist.Description</td>
+                    <td>@playlist.Cover_Image</td>
+                    <td>@playlist.UserId</td>
+                    <td>@playlist.DateCreated</td>
+                    <td>@playlist.DateUpdated</td>
+                    <td>@playlist.CreatedBy</td>
+                    <td>@playlist.UpdatedBy</td>
+                    <td>
+                        <a href="@($"playlists/edit?id={playlist.Id}")">Edit</a> |
+                        <a href="@($"playlists/details?id={playlist.Id}")">Details</a> |
+                        <a href="@($"playlists/delete?id={playlist.Id}")">Delete</a>
+                    </td>
+                </tr>
+            }
+        </tbody>
+    </table>
+}
 
 @code {
-    private MuseekContext context = default!;
+    private List<Playlist>? playlists;
 
-    protected override void OnInitialized()
+    protected override async Task OnInitializedAsync()
     {
-        context = DbFactory.CreateDbContext();
+        using var context = DbFactory.CreateDbContext();
+        playlists = await context.Playlist.ToListAsync();
     }
-
-    public async ValueTask DisposeAsync() => await context.DisposeAsync();
 }

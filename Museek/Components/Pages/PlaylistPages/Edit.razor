@@ -20,7 +20,7 @@ else
         <div class="col-md-4">
             <EditForm method="post" Model="Playlist" OnValidSubmit="UpdatePlaylist" FormName="edit" Enhance>
                 <DataAnnotationsValidator />
-                <ValidationSummary role="alert"/>
+                <ValidationSummary role="alert" />
                 <input type="hidden" name="Playlist.Id" value="@Playlist.Id" />
                 <div class="mb-3">
                     <label for="name" class="form-label">Name:</label>
@@ -33,9 +33,9 @@ else
                     <ValidationMessage For="() => Playlist.Description" class="text-danger" />
                 </div>
                 <div class="mb-3">
-                    <label for="adminid" class="form-label">AdminId:</label>
-                    <InputNumber id="adminid" @bind-Value="Playlist.AdminId" class="form-control" />
-                    <ValidationMessage For="() => Playlist.AdminId" class="text-danger" />
+                    <label for="coverimage" class="form-label">Cover Image:</label>
+                    <InputText id="coverimage" @bind-Value="Playlist.Cover_Image" class="form-control" />
+                    <ValidationMessage For="() => Playlist.Cover_Image" class="text-danger" />
                 </div>
                 <div class="mb-3">
                     <label for="userid" class="form-label">UserId:</label>
