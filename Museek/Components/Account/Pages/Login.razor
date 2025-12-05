@@ -10,57 +10,58 @@
 @inject NavigationManager NavigationManager
 @inject IdentityRedirectManager RedirectManager
 
-<PageTitle>Log in</PageTitle>
+<PageTitle>Login</PageTitle>
 
-<h1>Log in</h1>
-<div class="row">
-    <div class="col-md-4">
-        <section>
-            <StatusMessage Message="@errorMessage" />
-            <EditForm Model="Input" method="post" OnValidSubmit="LoginUser" FormName="login">
-                <DataAnnotationsValidator />
-                <h2>Use a local account to log in.</h2>
-                <hr />
-                <ValidationSummary class="text-danger" role="alert" />
-                <div class="form-floating mb-3">
-                    <InputText @bind-Value="Input.Email" class="form-control" autocomplete="username" aria-required="true" placeholder="name@example.com" />
-                    <label for="email" class="form-label">Email</label>
-                    <ValidationMessage For="() => Input.Email" class="text-danger" />
-                </div>
-                <div class="form-floating mb-3">
-                    <InputText type="password" @bind-Value="Input.Password" class="form-control" autocomplete="current-password" aria-required="true" placeholder="password" />
-                    <label for="password" class="form-label">Password</label>
-                    <ValidationMessage For="() => Input.Password" class="text-danger" />
-                </div>
-                <div class="checkbox mb-3">
-                    <label class="form-label">
-                        <InputCheckbox @bind-Value="Input.RememberMe" class="darker-border-checkbox form-check-input" />
-                        Remember me
-                    </label>
-                </div>
-                <div>
-                    <button type="submit" class="w-100 btn btn-lg btn-primary">Log in</button>
-                </div>
-                <div>
-                    <p>
-                        <a href="Account/ForgotPassword">Forgot your password?</a>
-                    </p>
-                    <p>
-                        <a href="@(NavigationManager.GetUriWithQueryParameters("", new Dictionary<string, object?> { ["ReturnUrl"] = ReturnUrl }))">Register as a new user</a>
-                    </p>
-                    <p>
-                        <a href="Account/ResendEmailConfirmation">Resend email confirmation</a>
-                    </p>
-                </div>
-            </EditForm>
-        </section>
-    </div>
-    <div class="col-md-6 col-md-offset-2">
-        <section>
-            <h3>Use another service to log in.</h3>
-            <hr />
-            <ExternalLoginPicker />
-        </section>
+<div class="login-wrapper">
+
+    <div class="form-container">
+
+        <h1 class="title">Welcome Back,<br />Log In.</h1>
+
+        <StatusMessage Message="@errorMessage" />
+
+        <EditForm Model="Input"
+                  method="post"
+                  OnValidSubmit="LoginUser"
+                  FormName="login">
+
+            <DataAnnotationsValidator />
+            <ValidationSummary class="error-summary" />
+
+            <!-- EMAIL -->
+            <div class="input-group">
+                <span class="icon">@("@")</span>
+                <InputText @bind-Value="Input.Email" placeholder="Email" class="input-box" />
+            </div>
+            <ValidationMessage For="() => Input.Email" class="field-error" />
+
+            <!-- PASSWORD -->
+            <div class="input-group">
+                <span class="icon">🔒</span>
+                <InputText type="password" @bind-Value="Input.Password" placeholder="Password" class="input-box" />
+            </div>
+            <ValidationMessage For="() => Input.Password" class="field-error" />
+
+            <!-- REMEMBER ME -->
+            <div class="remember-row">
+                <InputCheckbox @bind-Value="Input.RememberMe" class="remember-checkbox" />
+                <span>Remember Me</span>
+            </div>
+
+            <button type="submit" class="login-btn">Log In →</button>
+
+            <div class="login-footer">
+                <p><a href="Account/ForgotPassword">Forgot your password?</a></p>
+                <p>
+                    <a href="@NavigationManager.GetUriWithQueryParameters("", new Dictionary<string, object?> { ["ReturnUrl"] = ReturnUrl })">
+                        Register as a new user
+                    </a>
+                </p>
+                <p><a href="Account/ResendEmailConfirmation">Resend email confirmation</a></p>
+            </div>
+
+        </EditForm>
+
     </div>
 </div>
 
@@ -80,16 +81,15 @@
     {
         if (HttpMethods.IsGet(HttpContext.Request.Method))
         {
-            // Clear the existing external cookie to ensure a clean login process
             await HttpContext.SignOutAsync(IdentityConstants.ExternalScheme);
         }
     }
 
     public async Task LoginUser()
     {
-        // This doesn't count login failures towards account lockout
-        // To enable password failures to trigger account lockout, set lockoutOnFailure: true
-        var result = await SignInManager.PasswordSignInAsync(Input.Email, Input.Password, Input.RememberMe, lockoutOnFailure: false);
+        var result = await SignInManager.PasswordSignInAsync(
+            Input.Email, Input.Password, Input.RememberMe, lockoutOnFailure: false);
+
         if (result.Succeeded)
         {
             Logger.LogInformation("User logged in.");
@@ -114,15 +114,119 @@
 
     private sealed class InputModel
     {
-        [Required]
-        [EmailAddress]
+        [Required, EmailAddress]
         public string Email { get; set; } = "";
 
-        [Required]
-        [DataType(DataType.Password)]
+        [Required, DataType(DataType.Password)]
         public string Password { get; set; } = "";
 
-        [Display(Name = "Remember me?")]
         public bool RememberMe { get; set; }
     }
 }
+
+<style>
+
+    /* BACKGROUND MATCHES REGISTER PAGE */
+    .login-wrapper {
+        width: 100%;
+        min-height: calc(100vh - 70px);
+        background: url("images/AboutYou.png") center/cover no-repeat;
+        background-attachment: scroll;
+        display: flex;
+        justify-content: center;
+        align-items: flex-start;
+        padding-top: 20px;
+    }
+
+    /* TRANSPARENT GLASS FORM */
+    .form-container {
+        width: 520px;
+        padding: 25px 30px 40px 30px;
+        background: rgba(0, 0, 0, 0.55);
+        backdrop-filter: blur(6px);
+        border-radius: 16px;
+        border: 1px solid rgba(255,255,255,0.12);
+        color: white;
+    }
+
+    .title {
+        font-size: 36px;
+        font-weight: 700;
+        margin-bottom: 25px;
+        text-shadow: 0 1px 8px rgba(0,0,0,0.7);
+    }
+
+    /* INPUTS */
+    .input-group {
+        background: rgba(22,22,22,0.85);
+        border: 1px solid #333;
+        border-radius: 12px;
+        padding: 14px 16px;
+        display: flex;
+        align-items: center;
+        margin-bottom: 12px;
+    }
+
+    .input-box {
+        border: none;
+        background: transparent;
+        color: white;
+        width: 100%;
+        font-size: 16px;
+        outline: none;
+    }
+
+    .icon {
+        margin-right: 12px;
+        opacity: 0.8;
+    }
+
+    .field-error {
+        color: #ff4e4e;
+        font-size: 13px;
+        margin-bottom: 6px;
+    }
+
+    /* REMEMBER ME */
+    .remember-row {
+        display: flex;
+        align-items: center;
+        gap: 8px;
+        margin-top: 6px;
+        margin-bottom: 12px;
+        opacity: 0.9;
+    }
+
+    .remember-checkbox {
+        width: 18px;
+        height: 18px;
+    }
+
+    /* BUTTON */
+    .login-btn {
+        width: 100%;
+        background: #00d27f;
+        padding: 16px;
+        font-size: 18px;
+        border-radius: 12px;
+        color: black;
+        border: none;
+        cursor: pointer;
+        font-weight: 600;
+        margin-top: 12px;
+    }
+
+    /* FOOTER */
+    .login-footer {
+        margin-top: 20px;
+        text-align: center;
+        font-size: 15px;
+        opacity: 0.85;
+    }
+
+        .login-footer a {
+            color: #00c6ff;
+            text-decoration: none;
+        }
+
+</style>

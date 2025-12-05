@@ -19,9 +19,18 @@
                     <img src="images/homeIcon.png" class="icon" /> Home
                 </NavLink>
 
-                <NavLink href="/usersongs">
-                    <img src="images/album.png" class="icon" /> Library
-                </NavLink>
+                <AuthorizeView Roles="User" Context="UserCtx">
+                    | <NavLink href="/usersongs">
+                        <img src="images/album.png" class="icon" /> Library
+                    </NavLink>
+                </AuthorizeView>
+
+                <AuthorizeView Roles="Administrator" Context="adminCtx">
+                    | <NavLink href="/library">
+                        <img src="images/album.png" class="icon" /> Library
+                    </NavLink>
+                </AuthorizeView>
+
 
                 <NavLink href="/discover">
                     <img src="images/search.png" class="icon" /> Discover

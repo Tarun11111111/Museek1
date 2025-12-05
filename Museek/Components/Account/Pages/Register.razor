@@ -18,59 +18,74 @@
 
 <PageTitle>Register</PageTitle>
 
-<h1>Register</h1>
+<div class="register-wrapper">
 
-<div class="row">
-    <div class="col-md-4">
+    <div class="form-container">
+
+        <h1 class="title">Sign Up For Free,<br />Right Now.</h1>
+
         <StatusMessage Message="@Message" />
-        <EditForm Model="Input" asp-route-returnUrl="@ReturnUrl" method="post" OnValidSubmit="RegisterUser" FormName="register">
+
+        <EditForm Model="Input"
+                  asp-route-returnUrl="@ReturnUrl"
+                  method="post"
+                  OnValidSubmit="RegisterUser"
+                  FormName="register">
+
             <DataAnnotationsValidator />
-            <h2>Create a new account.</h2>
-            <hr />
-            <ValidationSummary class="text-danger" role="alert" />
-            <div class="form-floating mb-3">
-                <InputText @bind-Value="Input.Email" class="form-control" autocomplete="username" aria-required="true" placeholder="name@example.com" />
-                <label for="email">Email</label>
-                <ValidationMessage For="() => Input.Email" class="text-danger" />
-            </div>
+            <ValidationSummary class="error-summary" />
 
-            <div class="form-floating mb-3">
-                <InputText @bind-Value="Input.FirstName" class="form-control" autocomplete="firstname" aria-required="true" placeholder="name@example.com" />
-                <label for="firstname">First Name</label>
-                <ValidationMessage For="() => Input.FirstName" class="text-danger" />
+            <!-- EMAIL -->
+            <div class="input-group">
+                <span class="icon">@("@")</span>
+                <InputText @bind-Value="Input.Email" placeholder="Email" class="input-box" />
             </div>
+            <ValidationMessage For="() => Input.Email" class="field-error" />
 
-            <div class="form-floating mb-3">
-                <InputText @bind-Value="Input.LastName" class="form-control" autocomplete="lastname" aria-required="true" placeholder="name@example.com" />
-                <label for="lastname">Last Name</label>
-                <ValidationMessage For="() => Input.LastName" class="text-danger" />
+            <!-- FIRST NAME -->
+            <div class="input-group">
+                <span class="icon">👤</span>
+                <InputText @bind-Value="Input.FirstName" placeholder="First Name" class="input-box" />
             </div>
+            <ValidationMessage For="() => Input.FirstName" class="field-error" />
 
-            <div class="form-floating mb-3">
-                <InputText type="password" @bind-Value="Input.Password" class="form-control" autocomplete="new-password" aria-required="true" placeholder="password" />
-                <label for="password">Password</label>
-                <ValidationMessage For="() => Input.Password" class="text-danger" />
+            <!-- LAST NAME -->
+            <div class="input-group">
+                <span class="icon">👤</span>
+                <InputText @bind-Value="Input.LastName" placeholder="Last Name" class="input-box" />
             </div>
-            <div class="form-floating mb-3">
-                <InputText type="password" @bind-Value="Input.ConfirmPassword" class="form-control" autocomplete="new-password" aria-required="true" placeholder="password" />
-                <label for="confirm-password">Confirm Password</label>
-                <ValidationMessage For="() => Input.ConfirmPassword" class="text-danger" />
-            </div>
-            <button type="submit" class="w-100 btn btn-lg btn-primary">Register</button>
+            <ValidationMessage For="() => Input.LastName" class="field-error" />
 
-            <div class="text-center mt-3">
-                <span>Already have an account?</span>
-                <a href="Account/Login" class="login-link">Log in</a>
+            <!-- PASSWORD -->
+            <div class="input-group @(HasPasswordMismatch ? "input-error" : "")">
+                <span class="icon">🔒</span>
+                <InputText type="password" @bind-Value="Input.Password" placeholder="Password" class="input-box" />
+            </div>
+            <ValidationMessage For="() => Input.Password" class="field-error" />
+
+            <!-- CONFIRM PASSWORD -->
+            <div class="input-group @(HasPasswordMismatch ? "input-error" : "")">
+                <span class="icon">🔒</span>
+                <InputText type="password" @bind-Value="Input.ConfirmPassword" placeholder="Confirm Password" class="input-box" />
+            </div>
+            <ValidationMessage For="() => Input.ConfirmPassword" class="field-error" />
+
+            @if (HasPasswordMismatch)
+            {
+                <div class="password-error-box">
+                    ⚠ ERROR: Passwords do not match!
+                </div>
+            }
+
+            <button type="submit" class="register-btn">Sign Up →</button>
+
+            <div class="login-footer">
+                Already have an account?
+                <a href="Account/Login">Sign In</a>
             </div>
 
         </EditForm>
-    </div>
-    <div class="col-md-6 col-md-offset-2">
-        <section>
-            <h3>Use another service to register.</h3>
-            <hr />
-            <ExternalLoginPicker />
-        </section>
+
     </div>
 </div>
 
@@ -83,7 +98,13 @@
     [SupplyParameterFromQuery]
     private string? ReturnUrl { get; set; }
 
-    private string? Message => identityErrors is null ? null : $"Error: {string.Join(", ", identityErrors.Select(error => error.Description))}";
+    private bool HasPasswordMismatch =>
+        !string.IsNullOrWhiteSpace(Input.Password)
+        && !string.IsNullOrWhiteSpace(Input.ConfirmPassword)
+        && Input.Password != Input.ConfirmPassword;
+
+    private string? Message =>
+        identityErrors is null ? null : $"Error: {string.Join(", ", identityErrors.Select(e => e.Description))}";
 
     public async Task RegisterUser(EditContext editContext)
     {
@@ -93,10 +114,8 @@
         var emailStore = GetEmailStore();
         await emailStore.SetEmailAsync(user, Input.Email, CancellationToken.None);
 
-
         user.FirstName = Input.FirstName;
         user.LastName = Input.LastName;
-
 
         var result = await UserManager.CreateAsync(user, Input.Password);
 
@@ -106,86 +125,130 @@
             return;
         }
 
-
-        //create the user role if it doesn't exist
         if (!await RoleManager.RoleExistsAsync("User"))
-        {
             await RoleManager.CreateAsync(new IdentityRole("User"));
-        }
-        //add the user to the user role
+
         await UserManager.AddToRoleAsync(user, "User");
-        //add the user id as claim when user registers
-        await UserManager.AddClaimAsync(user, new System.Security.Claims.Claim("userId",
-        user.Id));
+        await UserManager.AddClaimAsync(user, new System.Security.Claims.Claim("userId", user.Id));
         await UserManager.AddClaimAsync(user, new System.Security.Claims.Claim("FirstName", user.FirstName));
 
-
-
-        Logger.LogInformation("User created a new account with password.");
-
-        var userId = await UserManager.GetUserIdAsync(user);
-        var code = await UserManager.GenerateEmailConfirmationTokenAsync(user);
-        code = WebEncoders.Base64UrlEncode(Encoding.UTF8.GetBytes(code));
-        var callbackUrl = NavigationManager.GetUriWithQueryParameters(
-            NavigationManager.ToAbsoluteUri("/Account/Login").AbsoluteUri,
-            new Dictionary<string, object?> { ["userId"] = userId, ["code"] = code, ["returnUrl"] = ReturnUrl });
-
-        await EmailSender.SendConfirmationLinkAsync(user, Input.Email, HtmlEncoder.Default.Encode(callbackUrl));
-
-
-
-
         RedirectManager.RedirectTo("/Account/Login");
-        return;
     }
 
-    private MuseekUser CreateUser()
-    {
-        try
-        {
-            return Activator.CreateInstance<MuseekUser>();
-        }
-        catch
-        {
-            throw new InvalidOperationException($"Can't create an instance of '{nameof(MuseekUser)}'. " +
-                $"Ensure that '{nameof(MuseekUser)}' is not an abstract class and has a parameterless constructor.");
-        }
-    }
-
-    private IUserEmailStore<MuseekUser> GetEmailStore()
-    {
-        if (!UserManager.SupportsUserEmail)
-        {
-            throw new NotSupportedException("The default UI requires a user store with email support.");
-        }
-        return (IUserEmailStore<MuseekUser>)UserStore;
-    }
+    private MuseekUser CreateUser() => Activator.CreateInstance<MuseekUser>();
+    private IUserEmailStore<MuseekUser> GetEmailStore() => (IUserEmailStore<MuseekUser>)UserStore;
 
     private sealed class InputModel
     {
-        [Required]
-        [EmailAddress]
-        [Display(Name = "Email")]
-        public string Email { get; set; } = "";
-
-
-        [Required]
-        [Display(Name = "First Name")]
-        public string FirstName { get; set; } = "";
-
-        [Required]
-        [Display(Name = "Last Name")]
-        public string LastName { get; set; } = "";
-
-        [Required]
-        [StringLength(100, ErrorMessage = "The {0} must be at least {2} and at max {1} characters long.", MinimumLength = 6)]
-        [DataType(DataType.Password)]
-        [Display(Name = "Password")]
-        public string Password { get; set; } = "";
-
-        [DataType(DataType.Password)]
-        [Display(Name = "Confirm password")]
-        [Compare("Password", ErrorMessage = "The password and confirmation password do not match.")]
-        public string ConfirmPassword { get; set; } = "";
+        [Required, EmailAddress] public string Email { get; set; } = "";
+        [Required] public string FirstName { get; set; } = "";
+        [Required] public string LastName { get; set; } = "";
+        [Required, StringLength(100, MinimumLength = 6)] public string Password { get; set; } = "";
+        [Compare("Password")] public string ConfirmPassword { get; set; } = "";
     }
 }
+
+<style>
+
+    /* FULL SCREEN BACKGROUND */
+    .register-wrapper {
+        width: 100%;
+        min-height: calc(100vh - 70px);
+        background: url("images/AboutYou.png") center/cover no-repeat ;
+        background-attachment: scroll;
+        display: flex;
+        justify-content: center;
+        align-items: flex-start;
+        padding-top: 20px;
+    }
+
+    /* TRANSPARENT FORM CARD */
+    .form-container {
+        width: 520px;
+        padding: 25px 30px 40px 30px;
+        background: rgba(0, 0, 0, 0.55); /* Transparent overlay */
+        backdrop-filter: blur(6px);
+        border-radius: 16px;
+        border: 1px solid rgba(255,255,255,0.12);
+        color: white;
+    }
+
+    .title {
+        font-size: 36px;
+        font-weight: 700;
+        margin-bottom: 25px;
+        text-shadow: 0 1px 8px rgba(0,0,0,0.7);
+    }
+
+    /* FORM INPUTS */
+    .input-group {
+        background: rgba(22,22,22,0.85);
+        border: 1px solid #333;
+        border-radius: 12px;
+        padding: 14px 16px;
+        display: flex;
+        align-items: center;
+        margin-bottom: 12px;
+    }
+
+        .input-group.input-error {
+            border-color: #ff5757;
+        }
+
+    .input-box {
+        border: none;
+        background: transparent;
+        color: white;
+        width: 100%;
+        font-size: 16px;
+        outline: none;
+    }
+
+    .icon {
+        margin-right: 12px;
+        opacity: 0.8;
+    }
+
+    .field-error {
+        color: #ff4e4e;
+        font-size: 13px;
+    }
+
+    .password-error-box {
+        background: rgba(255, 80, 80, 0.2);
+        border-left: 4px solid #ff4e4e;
+        padding: 10px 14px;
+        border-radius: 8px;
+        color: #ffb3b3;
+        margin-bottom: 12px;
+    }
+
+    /* BUTTON */
+    .register-btn {
+        width: 100%;
+        background: #00d27f;
+        padding: 16px;
+        font-size: 18px;
+        border-radius: 12px;
+        color: black;
+        border: none;
+        cursor: pointer;
+        font-weight: 600;
+        margin-top: 12px;
+    }
+
+    /* FOOTER */
+    .login-footer {
+        margin-top: 20px;
+        text-align: center;
+        font-size: 15px;
+        opacity: 0.85;
+    }
+
+        .login-footer a {
+            color: #00c6ff;
+            margin-left: 4px;
+            text-decoration: none;
+        }
+
+</style>
