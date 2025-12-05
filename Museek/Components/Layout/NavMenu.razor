@@ -2,6 +2,7 @@
 @inject NavigationManager NavigationManager
 @inject AuthenticationStateProvider AuthenticationStateProvider
 
+
 <div class="nav-wrapper">
 
     <!-- Left: Logo -->
@@ -26,9 +27,18 @@
                     <img src="images/search.png" class="icon" /> Discover
                 </NavLink>
 
-                <NavLink href="/songs">
-                    <img src="images/upload.png" class="icon" /> Upload Music
-                </NavLink>
+                <AuthorizeView Roles="User" Context="UserCtx">
+                    | <NavLink href="/songs">
+                        <img src="images/upload.png" class="icon" /> All Songs
+                    </NavLink>
+                </AuthorizeView>
+
+                <AuthorizeView Roles="Administrator" Context="adminCtx">
+                    | <NavLink href="/songs">
+                        <img src="images/upload.png" class="icon" /> Upload Music
+                    </NavLink>
+                </AuthorizeView>
+
             </div>
 
             <!-- Right: User + Logout -->

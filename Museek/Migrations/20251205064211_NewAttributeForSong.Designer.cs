@@ -3,6 +3,7 @@ using System;
 using Microsoft.EntityFrameworkCore;
 using Microsoft.EntityFrameworkCore.Infrastructure;
 using Microsoft.EntityFrameworkCore.Metadata;
+using Microsoft.EntityFrameworkCore.Migrations;
 using Microsoft.EntityFrameworkCore.Storage.ValueConversion;
 using Museek.Data;
 
@@ -11,9 +12,11 @@ using Museek.Data;
 namespace Museek.Migrations
 {
     [DbContext(typeof(MuseekContext))]
-    partial class MuseekContextModelSnapshot : ModelSnapshot
+    [Migration("20251205064211_NewAttributeForSong")]
+    partial class NewAttributeForSong
     {
-        protected override void BuildModel(ModelBuilder modelBuilder)
+        /// <inheritdoc />
+        protected override void BuildTargetModel(ModelBuilder modelBuilder)
         {
 #pragma warning disable 612, 618
             modelBuilder
@@ -251,7 +254,7 @@ namespace Museek.Migrations
                         {
                             Id = "3781efa7-66dc-47f0-860f-e506d04102e4",
                             AccessFailedCount = 0,
-                            ConcurrencyStamp = "b6a6c35d-4469-4a5f-80d5-ff46988e8cb5",
+                            ConcurrencyStamp = "e40ff3a8-beeb-48e6-bfb0-9bd3fb471208",
                             Email = "admin@localhost.com",
                             EmailConfirmed = true,
                             FirstName = "Admin",
@@ -259,9 +262,9 @@ namespace Museek.Migrations
                             LockoutEnabled = false,
                             NormalizedEmail = "ADMIN@LOCALHOST.COM",
                             NormalizedUserName = "ADMIN@LOCALHOST.COM",
-                            PasswordHash = "AQAAAAIAAYagAAAAEBWXj3hZVf/ae2FkILZs8F5H5Oahg1zReSkQkT8W7oL2epvgSy2EKiuhSG/a8ReG2Q==",
+                            PasswordHash = "AQAAAAIAAYagAAAAEG2LqN8EJC8gQF+U/1xKfQvgpNZLLiP46KDKoWpES10gQOQ0GPoovnAdcalF6Gsz8w==",
                             PhoneNumberConfirmed = false,
-                            SecurityStamp = "efa92b35-bcfe-4285-a5e3-7bde3fe4638f",
+                            SecurityStamp = "e152a8ef-2fb9-4d8f-8397-04eba90f1845",
                             TwoFactorEnabled = false,
                             UserName = "admin@localhost.com"
                         });
@@ -453,6 +456,9 @@ namespace Museek.Migrations
 
                     b.Property<int>("ArtistId")
                         .HasColumnType("int");
+
+                    b.Property<string>("Artist_Name")
+                        .HasColumnType("nvarchar(max)");
 
                     b.Property<string>("Audio_File")
                         .HasColumnType("nvarchar(max)");

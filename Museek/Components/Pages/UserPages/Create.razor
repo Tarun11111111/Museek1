@@ -35,22 +35,22 @@
                 <InputText id="profile_picture" @bind-Value="User.Profile_Picture" class="form-control" /> 
                 <ValidationMessage For="() => User.Profile_Picture" class="text-danger" /> 
             </div>        
-            <div class="mb-3">
+            <div class="mb-3" hidden>
                 <label for="datecreated" class="form-label">DateCreated:</label> 
                 <InputDate id="datecreated" @bind-Value="User.DateCreated" class="form-control" /> 
                 <ValidationMessage For="() => User.DateCreated" class="text-danger" /> 
             </div>        
-            <div class="mb-3">
+            <div class="mb-3" hidden>
                 <label for="dateupdated" class="form-label">DateUpdated:</label> 
                 <InputDate id="dateupdated" @bind-Value="User.DateUpdated" class="form-control" /> 
                 <ValidationMessage For="() => User.DateUpdated" class="text-danger" /> 
             </div>        
-            <div class="mb-3">
+            <div class="mb-3" hidden>
                 <label for="createdby" class="form-label">CreatedBy:</label> 
                 <InputText id="createdby" @bind-Value="User.CreatedBy" class="form-control" /> 
                 <ValidationMessage For="() => User.CreatedBy" class="text-danger" /> 
             </div>        
-            <div class="mb-3">
+            <div class="mb-3" hidden>
                 <label for="updatedby" class="form-label">UpdatedBy:</label> 
                 <InputText id="updatedby" @bind-Value="User.UpdatedBy" class="form-control" /> 
                 <ValidationMessage For="() => User.UpdatedBy" class="text-danger" /> 
@@ -72,8 +72,36 @@
     private async Task AddUser()
     {
         using var context = DbFactory.CreateDbContext();
+        //Set the userId to the CreatedBy and UpdatedBy fields.
+        User.CreatedBy = userId;
+        User.UpdatedBy = userId;
+        //Set the DateCreated and DateUpdated fields to the current date and time.
+        User.DateCreated = DateTime.Now;
+        User.DateUpdated = DateTime.Now;
         context.User.Add(User);
         await context.SaveChangesAsync();
-        NavigationManager.NavigateTo("/users");
+        NavigationManager.NavigateTo("/users");      
     }
+
+    private string userId = "System";
+
+    //Inject the AuthenticationStateProvider to get the user id.
+    @inject AuthenticationStateProvider authenticationStateProvider
+
+    //Override the OnInitialized method to get the user id.
+    protected override async void OnInitialized()
+    {
+        var authState = await authenticationStateProvider.GetAuthenticationStateAsync();
+        var user = authState.User;
+
+        // Get the userId claim
+        var userIdClaim = user.FindFirst("userId");
+
+        if (userIdClaim != null)
+        {
+            userId = userIdClaim.Value;
+        }
+    }
+
+
 }

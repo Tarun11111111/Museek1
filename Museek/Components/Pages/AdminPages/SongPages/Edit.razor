@@ -1,0 +1,136 @@
+﻿@page "/songs/edit"
+@using Microsoft.EntityFrameworkCore
+@using Museek.Domain
+@inject IDbContextFactory<Museek.Data.MuseekContext> DbFactory
+@inject NavigationManager NavigationManager
+
+
+<PageTitle>Edit</PageTitle>
+
+<h1>Edit</h1>
+
+<h2>Song</h2>
+<hr />
+@if (Song is null)
+{
+    <p><em>Loading...</em></p>
+}
+else
+{
+    <div class="row">
+        <div class="col-md-4">
+            <EditForm method="post" Model="Song" OnValidSubmit="UpdateSong" FormName="edit" Enhance>
+                <DataAnnotationsValidator />
+                <ValidationSummary role="alert"/>
+                <input type="hidden" name="Song.Id" value="@Song.Id" />
+                <div class="mb-3">
+                    <label for="title" class="form-label">Title:</label>
+                    <InputText id="title" @bind-Value="Song.Title" class="form-control" />
+                    <ValidationMessage For="() => Song.Title" class="text-danger" />
+                </div>
+
+                <div class="mb-3">
+                    <label for="audio_file" class="form-label">Audio_File:</label>
+                    <InputText id="audio_file" @bind-Value="Song.Audio_File" class="form-control" />
+                    <ValidationMessage For="() => Song.Audio_File" class="text-danger" />
+                </div>
+                <div class="mb-3">
+                    <label for="duration" class="form-label">Duration:</label>
+                    <InputNumber id="duration" @bind-Value="Song.Duration" class="form-control" />
+                    <ValidationMessage For="() => Song.Duration" class="text-danger" />
+                </div>
+                <div class="mb-3">
+                    <label for="cover_art" class="form-label">Cover_Art:</label>
+                    <InputText id="cover_art" @bind-Value="Song.Cover_Art" class="form-control" />
+                    <ValidationMessage For="() => Song.Cover_Art" class="text-danger" />
+                </div>
+                <div class="mb-3">
+                    <label for="albumid" class="form-label">AlbumId:</label>
+                    <InputNumber id="albumid" @bind-Value="Song.AlbumId" class="form-control" />
+                    <ValidationMessage For="() => Song.AlbumId" class="text-danger" />
+                </div>
+                <div class="mb-3">
+                    <label for="artistid" class="form-label">ArtistId:</label>
+                    <InputNumber id="artistid" @bind-Value="Song.ArtistId" class="form-control" />
+                    <ValidationMessage For="() => Song.ArtistId" class="text-danger" />
+                </div>
+                <div class="mb-3">
+                    <label for="datecreated" class="form-label">DateCreated:</label>
+                    <InputDate id="datecreated" @bind-Value="Song.DateCreated" class="form-control" />
+                    <ValidationMessage For="() => Song.DateCreated" class="text-danger" />
+                </div>
+                <div class="mb-3">
+                    <label for="dateupdated" class="form-label">DateUpdated:</label>
+                    <InputDate id="dateupdated" @bind-Value="Song.DateUpdated" class="form-control" />
+                    <ValidationMessage For="() => Song.DateUpdated" class="text-danger" />
+                </div>
+                <div class="mb-3">
+                    <label for="createdby" class="form-label">CreatedBy:</label>
+                    <InputText id="createdby" @bind-Value="Song.CreatedBy" class="form-control" />
+                    <ValidationMessage For="() => Song.CreatedBy" class="text-danger" />
+                </div>
+                <div class="mb-3">
+                    <label for="updatedby" class="form-label">UpdatedBy:</label>
+                    <InputText id="updatedby" @bind-Value="Song.UpdatedBy" class="form-control" />
+                    <ValidationMessage For="() => Song.UpdatedBy" class="text-danger" />
+                </div>
+                <button type="submit" class="btn btn-primary">Save</button>
+            </EditForm>
+        </div>
+    </div>
+}
+
+<div>
+    <a href="/songs">Back to List</a>
+</div>
+
+@code {
+    [SupplyParameterFromQuery]
+    private int Id { get; set; }
+
+    [SupplyParameterFromForm]
+    private Song? Song { get; set; }
+
+    protected override async Task OnInitializedAsync()
+    {
+        using var context = DbFactory.CreateDbContext();
+        Song ??= await context.Song.FirstOrDefaultAsync(m => m.Id == Id);
+
+        if (Song is null)
+        {
+            NavigationManager.NavigateTo("notfound");
+        }
+    }
+
+    // To protect from overposting attacks, enable the specific properties you want to bind to.
+    // For more information, see https://learn.microsoft.com/aspnet/core/blazor/forms/#mitigate-overposting-attacks.
+    private async Task UpdateSong()
+    {
+        using var context = DbFactory.CreateDbContext();
+        context.Attach(Song!).State = EntityState.Modified;
+
+        try
+        {
+            await context.SaveChangesAsync();
+        }
+        catch (DbUpdateConcurrencyException)
+        {
+            if (!SongExists(Song!.Id))
+            {
+                NavigationManager.NavigateTo("notfound");
+            }
+            else
+            {
+                throw;
+            }
+        }
+
+        NavigationManager.NavigateTo("/songs");
+    }
+
+    private bool SongExists(int id)
+    {
+        using var context = DbFactory.CreateDbContext();
+        return context.Song.Any(e => e.Id == id);
+    }
+}

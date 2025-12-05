@@ -1,0 +1,103 @@
+﻿@page "/songs"
+@using Microsoft.EntityFrameworkCore
+@using Microsoft.AspNetCore.Components.QuickGrid
+@using Museek.Domain
+@using Museek.Data
+@implements IAsyncDisposable
+@inject IDbContextFactory<MuseekContext> DbFactory
+
+<PageTitle>My Library</PageTitle>
+
+<div class="library-page">
+
+    <h1 class="page-title">My Library</h1>
+
+    <!-- Tabs -->
+    <div class="tabs">
+        <span class="tab active">Released</span>
+        <span class="tab">Upcoming</span>
+    </div>
+
+    <!-- Search + Upload -->
+    <div class="top-actions">
+        <div class="search-bar">
+            <img src="images/search.png" class="search-icon" />
+            <input type="text" placeholder="Search library" @bind="searchText" />
+        </div>
+
+        <a href="songs/create" class="upload-btn">+ Upload music</a>
+    </div>
+
+    <!-- Table -->
+    <div class="song-table">
+
+        <div class="table-header">
+            <span class="col-title name-col">Name</span>
+            <span class="col-title small-col">Streams</span>
+            <span class="col-title small-col">Listeners</span>
+            <span class="col-title small-col">Saves</span>
+            <span class="col-title small-col">Release date</span>
+        </div>
+
+        @foreach (var s in FilteredSongs)
+        {
+            <div class="song-row">
+
+                <!-- Song Info -->
+                <div class="song-main">
+                    <img src="@s.Cover_Art" class="song-img" />
+                    <div class="song-meta">
+                        <span class="song-name">@s.Title</span>
+                        <span class="song-artist">@GetArtistName(s.ArtistId)</span>
+                    </div>
+                </div>
+
+                <!-- Fake data for streams/listeners/saves -->
+                <div class="song-stat">0</div>
+                <div class="song-stat">0</div>
+                <div class="song-stat">0</div>
+
+                <div class="song-stat">@s.DateCreated.ToShortDateString()</div>
+
+                <div class="song-actions">
+                    <a href="@($"songs/edit?id={s.Id}")">Edit</a> |
+                    <a href="@($"songs/details?id={s.Id}")">Details</a> |
+                    <a href="@($"songs/delete?id={s.Id}")">Delete</a>
+                </div>
+
+            </div>
+        }
+    </div>
+
+</div>
+
+@code {
+    private MuseekContext context = default!;
+    private List<Song> songs = new();
+    private List<Artist> artists = new();
+    private List<Album> albums = new();
+
+    private string searchText = "";
+
+    protected override void OnInitialized()
+    {
+        context = DbFactory.CreateDbContext();
+
+        songs = context.Song.ToList();
+        artists = context.Artist.ToList();
+        albums = context.Album.ToList();
+    }
+
+    private IEnumerable<Song> FilteredSongs =>
+        string.IsNullOrWhiteSpace(searchText)
+        ? songs
+        : songs.Where(s => s.Title.Contains(searchText, StringComparison.OrdinalIgnoreCase));
+
+    private string GetArtistName(int id) =>
+        artists.FirstOrDefault(a => a.Id == id)?.Name ?? "Unknown";
+
+    private string GetAlbumTitle(int id) =>
+        albums.FirstOrDefault(a => a.Id == id)?.Title ?? "Unknown";
+
+    public async ValueTask DisposeAsync() => await context.DisposeAsync();
+}

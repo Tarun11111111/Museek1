@@ -1,4 +1,4 @@
-﻿@page "/users/edit"
+﻿    @page "/users/edit"
 @using Microsoft.EntityFrameworkCore
 @using Museek.Domain
 @inject IDbContextFactory<Museek.Data.MuseekContext> DbFactory
@@ -78,9 +78,27 @@ else
 
     [SupplyParameterFromForm]
     private User? User { get; set; }
+    //Create userId string to store the user id, default value is "System".
+    private string userId = "System";
+
+    //Inject the AuthenticationStateProvider to get the user id.
+    @inject AuthenticationStateProvider authenticationStateProvider
+
 
     protected override async Task OnInitializedAsync()
     {
+
+        var authState = await authenticationStateProvider.GetAuthenticationStateAsync();
+        var user = authState.User;
+
+        // Get the userId claim
+        var userIdClaim = user.FindFirst("userId");
+
+        if (userIdClaim != null)
+        {
+            userId = userIdClaim.Value;
+        }
+
         using var context = DbFactory.CreateDbContext();
         User ??= await context.User.FirstOrDefaultAsync(m => m.Id == Id);
 
@@ -95,6 +113,12 @@ else
     private async Task UpdateUser()
     {
         using var context = DbFactory.CreateDbContext();
+        //Set the userId to the UpdatedBy fields.
+        User.UpdatedBy = userId;
+
+        //Set the DateUpdated fields to the current date and time.
+        User.DateUpdated = DateTime.Now;
+
         context.Attach(User!).State = EntityState.Modified;
 
         try

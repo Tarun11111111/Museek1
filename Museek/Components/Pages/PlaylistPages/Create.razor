@@ -32,25 +32,34 @@
             </div>
             <div class="mb-3">
                 <label for="userid" class="form-label">UserId:</label>
-                <InputNumber id="userid" @bind-Value="Playlist.UserId" class="form-control" />
+                <InputSelect id="userid" @bind-Value="Playlist.UserId" class="form-control">
+                    <option value="">-- Select Album --</option>
+                    @if (Users != null)
+                    {
+                        foreach (var user in Users)
+                        {
+                            <option value="@user.Id">@user.Name</option>
+                        }
+                    }
+                </InputSelect>
                 <ValidationMessage For="() => Playlist.UserId" class="text-danger" />
             </div>
-            <div class="mb-3">
+            <div class="mb-3" hidden>
                 <label for="datecreated" class="form-label">DateCreated:</label>
                 <InputDate id="datecreated" @bind-Value="Playlist.DateCreated" class="form-control" />
                 <ValidationMessage For="() => Playlist.DateCreated" class="text-danger" />
             </div>
-            <div class="mb-3">
+            <div class="mb-3" hidden>
                 <label for="dateupdated" class="form-label">DateUpdated:</label>
                 <InputDate id="dateupdated" @bind-Value="Playlist.DateUpdated" class="form-control" />
                 <ValidationMessage For="() => Playlist.DateUpdated" class="text-danger" />
             </div>
-            <div class="mb-3">
+            <div class="mb-3" hidden>
                 <label for="createdby" class="form-label">CreatedBy:</label>
                 <InputText id="createdby" @bind-Value="Playlist.CreatedBy" class="form-control" />
                 <ValidationMessage For="() => Playlist.CreatedBy" class="text-danger" />
             </div>
-            <div class="mb-3">
+            <div class="mb-3" hidden>
                 <label for="updatedby" class="form-label">UpdatedBy:</label>
                 <InputText id="updatedby" @bind-Value="Playlist.UpdatedBy" class="form-control" />
                 <ValidationMessage For="() => Playlist.UpdatedBy" class="text-danger" />
@@ -68,10 +77,76 @@
     [SupplyParameterFromForm]
     private Playlist Playlist { get; set; } = new();
 
+
+    //Declare and initialize CarRentalManagementContext, IList and Dictionaries
+    private MuseekContext context = default!;
+    private IList<Song> Songs;
+    private IList<User> Users;
+    private Dictionary<int, Album> AlbumsDict = new Dictionary<int, Album>();
+    private Dictionary<int, Artist> ArtistsDict = new Dictionary<int, Artist>();
+
+
+    //Create userId string to store the user id, default value is "System".
+    private string userId = "System";
+
+    //Create isAdmin boolean to store the user role, default value is false.
+    private bool isAdmin = false;
+
+    //Inject the AuthenticationStateProvider to get the user id.
+    @inject AuthenticationStateProvider authenticationStateProvider
+
+
+    //Override the OnInitialized method to get the user id and all the entities.
+    protected override async void OnInitialized()
+    {
+        // Retrieve authentication state and user information
+        var authState = await authenticationStateProvider.GetAuthenticationStateAsync();
+        var user = authState.User;
+
+        // Get the userId claim
+        var userIdClaim = user.FindFirst("userId");
+        if (userIdClaim != null)
+        {
+            userId = userIdClaim.Value;
+        }
+
+        // Check if the user is authenticated and is an administrator
+        if (user.Identity != null && user.Identity.IsAuthenticated)
+        {
+            isAdmin = user.IsInRole("Administrator");
+        }
+
+        //Initialize the DbContext
+        context = DbFactory.CreateDbContext();
+
+        //Load data from the database
+        Songs = context.Song.ToList();
+
+        //Get all the customers created by the user or all customers if the user is an administrator
+        Users = context.User.Where(c => c.CreatedBy == userId).ToList();
+        if (isAdmin)
+        {
+            Users = context.User.ToList();
+        }
+
+        AlbumsDict = context.Album.ToDictionary(o => o.Id, o => o);
+        ArtistsDict = context.Artist.ToDictionary(o => o.Id, o => o);
+    }
+
+
     // To protect from overposting attacks, see https://learn.microsoft.com/aspnet/core/blazor/forms/#mitigate-overposting-attacks.
     private async Task AddPlaylist()
     {
         using var context = DbFactory.CreateDbContext();
+
+        //Set the userId to the CreatedBy and UpdatedBy fields.
+        Playlist.CreatedBy = userId;
+        Playlist.UpdatedBy = userId;
+
+        //Set the DateCreated and DateUpdated fields to the current date and time.
+        Playlist.DateCreated = DateTime.Now;
+        Playlist.DateUpdated = DateTime.Now;
+
         context.Playlist.Add(Playlist);
         await context.SaveChangesAsync();
         NavigationManager.NavigateTo("/playlists");

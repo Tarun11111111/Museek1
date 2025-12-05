@@ -2,6 +2,8 @@
 @using Microsoft.EntityFrameworkCore
 @using Museek.Domain
 @inject IDbContextFactory<Museek.Data.MuseekContext> DbFactory
+@using Microsoft.AspNetCore.Components.QuickGrid
+@rendermode InteractiveServer
 
 <PageTitle>Index</PageTitle>
 
@@ -17,49 +19,81 @@
 }
 else
 {
-    <table class="table">
-        <thead>
-            <tr>
-                <th>Name</th>
-                <th>Description</th>
-                <th>Cover Image</th>
-                <th>UserId</th>
-                <th>DateCreated</th>
-                <th>DateUpdated</th>
-                <th>CreatedBy</th>
-                <th>UpdatedBy</th>
-                <th></th>
-            </tr>
-        </thead>
-        <tbody>
-            @foreach (var playlist in playlists)
-            {
-                <tr>
-                    <td>@playlist.Name</td>
-                    <td>@playlist.Description</td>
-                    <td>@playlist.Cover_Image</td>
-                    <td>@playlist.UserId</td>
-                    <td>@playlist.DateCreated</td>
-                    <td>@playlist.DateUpdated</td>
-                    <td>@playlist.CreatedBy</td>
-                    <td>@playlist.UpdatedBy</td>
-                    <td>
-                        <a href="@($"playlists/edit?id={playlist.Id}")">Edit</a> |
-                        <a href="@($"playlists/details?id={playlist.Id}")">Details</a> |
-                        <a href="@($"playlists/delete?id={playlist.Id}")">Delete</a>
-                    </td>
-                </tr>
-            }
-        </tbody>
-    </table>
+
+
+    <QuickGrid Class="table" Items="FilteredPlaylists" Pagination="paginationState">
+        <PropertyColumn Property="playlist => playlist.Name" Sortable="true" />
+        <PropertyColumn Property="playlist => playlist.Description" />
+        <PropertyColumn Property="playlist => playlist.Cover_Image" />
+
+        <TemplateColumn Context="playlist" Title="User">
+            @GetUserString(playlist.UserId)
+        </TemplateColumn>
+
+
+        @* <PropertyColumn Property="playlist => playlist.UserId" /> *@
+
+        @* <PropertyColumn Property="playlist => playlist.DateCreated" />
+        <PropertyColumn Property="playlist => playlist.DateUpdated" />
+        <PropertyColumn Property="playlist => playlist.CreatedBy" />
+        <PropertyColumn Property="playlist => playlist.UpdatedBy" /> *@
+
+        <TemplateColumn Context="playlist">
+            <a href="@($"playlists/edit?id={playlist.Id}")">Edit</a> |
+            <a href="@($"playlists/details?id={playlist.Id}")">Details</a> |
+            <a href="@($"playlists/delete?id={playlist.Id}")">Delete</a>
+        </TemplateColumn>
+
+
+    </QuickGrid>
+    <Paginator State="paginationState" />
+
 }
 
 @code {
+
+    PaginationState paginationState = new PaginationState { ItemsPerPage = 1 };
+
+    //Declare and initialize IList and Dictionaries
+    private IList<User> Users;
+
+
+    private MuseekContext context = default!;
+    private string userId = string.Empty;
+    private bool isAdmin = false;
+    @inject AuthenticationStateProvider authenticationStateProvider
+
+    // Filter bookings by userId
+    private IQueryable<Playlist> FilteredPlaylists => isAdmin
+    ? context.Playlist // Admins can see all bookings
+    : context.Playlist.Where(e => e.CreatedBy == userId); // Regular users see only their own bookings
+
     private List<Playlist>? playlists;
 
     protected override async Task OnInitializedAsync()
     {
+        var authState = await authenticationStateProvider.GetAuthenticationStateAsync();
+        var user = authState.User;
+        // Extract user information
+        userId = user.FindFirst("userId")?.Value ?? string.Empty;
+        isAdmin = user.IsInRole("Administrator");
+
         using var context = DbFactory.CreateDbContext();
+
+
+
         playlists = await context.Playlist.ToListAsync();
     }
+
+    // GetUserString method to get the vehicle string 
+    private string GetUserString(int userId) 
+    { 
+        var user = Users.FirstOrDefault(v => v.Id == userId);
+        return user == null ? string.Empty : $"{user.Name} ({user.Email})";
+    } 
+
+
+
+
+
 }

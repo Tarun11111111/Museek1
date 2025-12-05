@@ -1,0 +1,141 @@
+﻿@page "/songs/create"
+@using Microsoft.EntityFrameworkCore
+@using Museek.Domain
+@inject IDbContextFactory<Museek.Data.MuseekContext> DbFactory
+@inject NavigationManager NavigationManager
+@inject IWebHostEnvironment Env
+
+<PageTitle>Create Song</PageTitle>
+
+<h1>Create</h1>
+<h2>Song</h2>
+<hr />
+
+<div class="row">
+    <div class="col-md-4">
+
+        <EditForm method="post" Model="Song" OnValidSubmit="AddSong" FormName="create" Enhance>
+            <DataAnnotationsValidator />
+            <ValidationSummary class="text-danger" />
+
+            <div class="mb-3">
+                <label class="form-label">Title:</label>
+                <InputText @bind-Value="Song.Title" class="form-control" />
+            </div>
+
+
+            <div class="mb-3">
+                <label class="form-label">Audio File:</label>
+                <InputSelect @bind-Value="Song.Audio_File" class="form-control">
+                    <option value="">-- Select Audio File --</option>
+                    @foreach (var file in AudioFiles)
+                    {
+                        <option value="@($"audios/{file}")">@file</option>
+                    }
+                </InputSelect>
+            </div>
+
+            <div class="mb-3">
+                <label class="form-label">Duration (seconds):</label>
+                <InputNumber @bind-Value="Song.Duration" class="form-control" />
+            </div>
+
+            <div class="mb-3">
+                <label class="form-label">Cover Image:</label>
+                <InputSelect @bind-Value="Song.Cover_Art" class="form-control">
+                    <option value="">-- Select Cover Image --</option>
+                    @foreach (var img in ImageFiles)
+                    {
+                        <option value="@($"images/{img}")">@img</option>
+                    }
+                </InputSelect>
+            </div>
+
+            <div class="mb-3">
+                <label class="form-label">Album:</label>
+                <InputSelect @bind-Value="Song.AlbumId" class="form-control">
+                    <option value="">-- Select Album --</option>
+
+                    @foreach (var album in Albums)
+                    {
+                        <option value="@album.Id">@album.Title</option>
+                    }
+
+                    <!-- Hardcoded fallback -->
+                    <option value="101">Hardcoded Album A</option>
+                    <option value="102">Hardcoded Album B</option>
+                    <option value="103">Hardcoded Album C</option>
+                </InputSelect>
+            </div>
+
+            <div class="mb-3">
+                <label class="form-label">Artist:</label>
+                <InputSelect @bind-Value="Song.ArtistId" class="form-control">
+                    <option value="">-- Select Artist --</option>
+
+                    @foreach (var artist in Artists)
+                    {
+                        <option value="@artist.Id">@artist.Name</option>
+                    }
+
+                    <!-- Hardcoded fallback -->
+                    <option value="201">Hardcoded Artist X</option>
+                    <option value="202">Hardcoded Artist Y</option>
+                    <option value="203">Hardcoded Artist Z</option>
+                </InputSelect>
+            </div>
+
+            <button type="submit" class="btn btn-primary">Create</button>
+
+        </EditForm>
+    </div>
+</div>
+
+<div>
+    <a href="/songs">Back to List</a>
+</div>
+
+@code {
+    [SupplyParameterFromForm]
+    private Song Song { get; set; } = new();
+
+    private MuseekContext context = default!;
+    private IList<Album> Albums = new List<Album>();
+    private IList<Artist> Artists = new List<Artist>();
+
+    // File lists
+    private List<string> AudioFiles = new();
+    private List<string> ImageFiles = new();
+
+    protected override void OnInitialized()
+    {
+        context = DbFactory.CreateDbContext();
+
+        Albums = context.Album.ToList();
+        Artists = context.Artist.ToList();
+
+        // Load files from wwwroot
+        LoadFiles();
+    }
+
+    private void LoadFiles()
+    {
+        var audioDir = Path.Combine(Env.WebRootPath, "audios");
+        var imageDir = Path.Combine(Env.WebRootPath, "images");
+
+        if (Directory.Exists(audioDir))
+            AudioFiles = Directory.GetFiles(audioDir).Select(Path.GetFileName).ToList();
+
+        if (Directory.Exists(imageDir))
+            ImageFiles = Directory.GetFiles(imageDir).Select(Path.GetFileName).ToList();
+    }
+
+    private async Task AddSong()
+    {
+        using var db = DbFactory.CreateDbContext();
+        db.Song.Add(Song);
+        await db.SaveChangesAsync();
+
+        NavigationManager.NavigateTo("/songs");
+    }
+}

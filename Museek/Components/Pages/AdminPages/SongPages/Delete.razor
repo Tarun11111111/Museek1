@@ -1,14 +1,15 @@
-﻿@page "/songs/details"
+﻿@page "/songs/delete"
 @using Microsoft.EntityFrameworkCore
 @using Museek.Domain
 @inject IDbContextFactory<Museek.Data.MuseekContext> DbFactory
 @inject NavigationManager NavigationManager
-@attribute [Authorize(Roles = "Administrator, User")]
 
-<PageTitle>Details</PageTitle>
 
-<h1>Details</h1>
+<PageTitle>Delete</PageTitle>
 
+<h1>Delete</h1>
+
+<p>Are you sure you want to delete this?</p>
 <div>
     <h2>Song</h2>
     <hr />
@@ -20,29 +21,48 @@
         <dl class="row">
             <dt class="col-sm-2">Title</dt>
             <dd class="col-sm-10">@song.Title</dd>
+        </dl>
+
+        <dl class="row">
             <dt class="col-sm-2">Audio_File</dt>
             <dd class="col-sm-10">@song.Audio_File</dd>
+        </dl>
+        <dl class="row">
             <dt class="col-sm-2">Duration</dt>
             <dd class="col-sm-10">@song.Duration</dd>
+        </dl>
+        <dl class="row">
             <dt class="col-sm-2">Cover_Art</dt>
             <dd class="col-sm-10">@song.Cover_Art</dd>
+        </dl>
+        <dl class="row">
             <dt class="col-sm-2">AlbumId</dt>
             <dd class="col-sm-10">@song.AlbumId</dd>
+        </dl>
+        <dl class="row">
             <dt class="col-sm-2">ArtistId</dt>
             <dd class="col-sm-10">@song.ArtistId</dd>
+        </dl>
+        <dl class="row">
             <dt class="col-sm-2">DateCreated</dt>
             <dd class="col-sm-10">@song.DateCreated</dd>
+        </dl>
+        <dl class="row">
             <dt class="col-sm-2">DateUpdated</dt>
             <dd class="col-sm-10">@song.DateUpdated</dd>
+        </dl>
+        <dl class="row">
             <dt class="col-sm-2">CreatedBy</dt>
             <dd class="col-sm-10">@song.CreatedBy</dd>
+        </dl>
+        <dl class="row">
             <dt class="col-sm-2">UpdatedBy</dt>
             <dd class="col-sm-10">@song.UpdatedBy</dd>
         </dl>
-        <div>
-            <a href="@($"/songs/edit?id={song.Id}")">Edit</a> |
-            <a href="@($"/songs")">Back to List</a>
-        </div>
+        <EditForm method="post" Model="song" OnValidSubmit="DeleteSong" FormName="delete" Enhance>
+            <button type="submit" class="btn btn-danger" disabled="@(song is null)">Delete</button> |
+            <a href="/songs">Back to List</a>
+        </EditForm>
     }
 </div>
 
@@ -61,5 +81,13 @@
         {
             NavigationManager.NavigateTo("notfound");
         }
+    }
+
+    private async Task DeleteSong()
+    {
+        using var context = DbFactory.CreateDbContext();
+        context.Song.Remove(song!);
+        await context.SaveChangesAsync();
+        NavigationManager.NavigateTo("/songs");
     }
 }
