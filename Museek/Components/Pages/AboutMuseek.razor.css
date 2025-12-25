@@ -1,0 +1,189 @@
+﻿/* FILE: Pages/About/About.razor.css */
+.about-page {
+    padding: 30px 60px;
+    font-family: "Poppins", sans-serif;
+}
+
+.about-grid {
+    display: grid;
+    grid-template-columns: 1.3fr 0.9fr;
+    gap: 22px;
+    align-items: start;
+}
+
+.about-title {
+    font-size: 54px;
+    font-weight: 800;
+    margin: 0 0 12px 0;
+    color: white;
+    letter-spacing: -0.5px;
+}
+
+.about-lead {
+    margin: 0 0 26px 0;
+    font-size: 16px;
+    line-height: 1.65;
+    color: rgba(255, 255, 255, 0.80);
+    max-width: 760px;
+}
+
+.section-title {
+    margin: 0 0 10px 0;
+    font-size: 22px;
+    font-weight: 800;
+    color: white;
+}
+
+.section-text {
+    margin: 0 0 18px 0;
+    color: rgba(255, 255, 255, 0.72);
+    line-height: 1.65;
+    font-size: 14px;
+    max-width: 760px;
+}
+
+    .section-text.compact {
+        margin-bottom: 14px;
+    }
+
+.bullets {
+    margin: 0 0 22px 18px;
+    padding: 0;
+    color: rgba(255, 255, 255, 0.72);
+    line-height: 1.7;
+    font-size: 14px;
+}
+
+    .bullets li {
+        margin-bottom: 6px;
+    }
+
+.links-row {
+    display: flex;
+    gap: 12px;
+    flex-wrap: wrap;
+    margin-top: 8px;
+}
+
+.link {
+    text-decoration: none;
+    color: white;
+    font-weight: 800;
+    padding: 10px 12px;
+    border-radius: 14px;
+    background: rgba(255, 255, 255, 0.10);
+    border: 1px solid rgba(255, 255, 255, 0.12);
+}
+
+    .link:hover {
+        background: rgba(255, 255, 255, 0.16);
+    }
+
+.about-side {
+    display: grid;
+    gap: 14px;
+}
+
+.side-card {
+    border-radius: 18px;
+    border: 1px solid rgba(255, 255, 255, 0.10);
+    background: rgba(255, 255, 255, 0.06);
+    padding: 16px;
+}
+
+.side-title {
+    margin: 0 0 12px 0;
+    font-size: 34px;
+    font-weight: 800;
+    color: white;
+    letter-spacing: -0.3px;
+}
+
+.kv {
+    display: grid;
+    grid-template-columns: 110px 1fr;
+    gap: 10px;
+    padding: 10px 0;
+    border-bottom: 1px solid rgba(255, 255, 255, 0.08);
+}
+
+    .kv:last-child {
+        border-bottom: none;
+    }
+
+.k {
+    font-size: 12px;
+    font-weight: 800;
+    color: rgba(255, 255, 255, 0.70);
+    text-transform: uppercase;
+    letter-spacing: 0.6px;
+}
+
+.v {
+    font-size: 14px;
+    color: rgba(255, 255, 255, 0.85);
+    line-height: 1.5;
+}
+
+.email {
+    color: white;
+    text-decoration: none;
+    font-weight: 800;
+}
+
+    .email:hover {
+        text-decoration: underline;
+    }
+
+.contact-actions {
+    display: flex;
+    gap: 10px;
+    flex-wrap: wrap;
+}
+
+.primary {
+    text-decoration: none;
+    border-radius: 14px;
+    padding: 10px 14px;
+    font-weight: 900;
+    color: white;
+    background: rgba(255, 105, 249, 0.28);
+    border: 1px solid rgba(255, 105, 249, 0.22);
+}
+
+    .primary:hover {
+        background: rgba(255, 105, 249, 0.36);
+    }
+
+.secondary {
+    text-decoration: none;
+    border-radius: 14px;
+    padding: 10px 14px;
+    font-weight: 900;
+    color: white;
+    background: rgba(255, 255, 255, 0.10);
+    border: 1px solid rgba(255, 255, 255, 0.12);
+}
+
+    .secondary:hover {
+        background: rgba(255, 255, 255, 0.16);
+    }
+
+@media (max-width: 1024px) {
+    .about-page {
+        padding: 24px 20px;
+    }
+
+    .about-grid {
+        grid-template-columns: 1fr;
+        gap: 16px;
+    }
+
+    .about-title {
+        font-size: 44px;
+    }
+
+    .side-title {
+        font-size: 28px;
+    }
+}
