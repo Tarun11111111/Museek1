@@ -83,6 +83,28 @@
     margin-top: 12px;
 }
 
+/* Only replace the button content, keep the same button layout */
+.heart-btn,
+.playlist-btn {
+    display: flex;
+    align-items: center;
+    justify-content: center;
+    gap: 6px;
+}
+
+.btn-icon {
+    width: 16px;
+    height: 16px;
+    object-fit: contain;
+    flex: 0 0 auto;
+}
+
+.btn-text {
+    font-size: 13px;
+    line-height: 1;
+}
+
+/* existing button styles */
 .heart-btn {
     flex: 1;
     border: none;

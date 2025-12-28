@@ -71,7 +71,7 @@
                     <div class="song-actions">
                         <a href="@($"usersongs/edit?id={row.UserSong.Id}")">Edit</a> |
                         <a href="@($"usersongs/details?id={row.UserSong.Id}")">Details</a> |
-                        <a href="@($"usersongs/delete?id={row.UserSong.Id}")">Delete</a>
+                        <a href="@($"usersongs/delete?id={row.UserSong.Id}")">Remove</a>
                     </div>
 
                 </div>
@@ -93,7 +93,8 @@
                     <h4 id="songTitle">@currentSong.Title</h4>
                     <p id="songArtist">@currentSong.Artist</p>
                 </div>
-                <img src="@(isLiked ? "images/heartAfter.png" : "images/heartBefore.png")"
+
+                <img src="@(isLiked ? "images/Liked.png" : "images/Like.png")"
                      alt="like"
                      class="icon-btn"
                      @onclick="@ToggleLike" />
@@ -114,6 +115,11 @@
                          @onclick="@TogglePlayPause" />
                     <img src="images/nextButton.png" alt="Next" class="control-icon" @onclick="@NextSong" />
                     <img src="@GetRepeatIcon()" alt="Repeat" class="control-icon" @onclick="@ToggleRepeat" />
+
+                    <img src="images/rating.png"
+                         alt="Rate"
+                         class="control-icon rating-icon"
+                         @onclick="@ToggleRatingPopover" />
                 </div>
                 <div class="time-display">
                     <span id="currentTime">@currentTime</span>
@@ -127,6 +133,55 @@
             </div>
 
             <audio id="audioPlayer" src="@GetEncodedAudioPath(currentSong.AudioPath)"></audio>
+
+            @if (showRatingPopover)
+            {
+                <div class="rating-popover-backdrop" @onclick="CloseRatingPopover">
+                    <div class="rating-popover" @onclick:stopPropagation="true">
+                        <button class="rating-close" type="button" @onclick="CloseRatingPopover">×</button>
+
+                        <div class="rating-head">
+                            <img class="rating-cover" src="@currentSong.Image" alt="Cover" />
+                            <div class="rating-songmeta">
+                                <div class="rating-title">@currentSong.Title</div>
+                                <div class="rating-artist">@currentSong.Artist</div>
+                            </div>
+                        </div>
+
+                        <div class="rating-stars">
+                            @for (int i = 1; i <= 5; i++)
+                            {
+                                var star = i; /* IMPORTANT: avoid capturing the loop variable */
+                                var isOn = ratingValue >= star;
+
+                                <button type="button"
+                                        class="star-btn"
+                                        aria-label="Rate @star star"
+                                        aria-pressed="@(isOn)"
+                                        @onclick="@(() => SetRating(star))">
+                                    <span class="star @(isOn ? "on" : "off")">★</span>
+                                </button>
+                            }
+                        </div>
+
+                        <div class="rating-field">
+                            <label class="rating-label">Comment (optional)</label>
+                            <textarea class="rating-textarea"
+                                      placeholder="Add some notes"
+                                      @bind="ratingComment"></textarea>
+                        </div>
+
+                        @if (!string.IsNullOrWhiteSpace(ratingError))
+                        {
+                            <div class="rating-error">@ratingError</div>
+                        }
+
+                        <div class="rating-actions">
+                            <button class="rating-primary" type="button" @onclick="SaveRatingAsync">Rate</button>
+                        </div>
+                    </div>
+                </div>
+            }
         </section>
     </div>
 }
@@ -140,7 +195,10 @@
 
     private bool showPlayer = false;
     private bool isPlaying = false;
-    private bool isLiked = false;
+
+    // On /usersongs, songs are liked by definition.
+    private bool isLiked = true;
+
     private double progress = 0;
     private double volume = 70;
     private string currentTime = "00:00";
@@ -148,6 +206,7 @@
 
     private PlayerSong currentSong = new PlayerSong
     {
+        SongId = 0,
         Title = "",
         Artist = "",
         Image = "",
@@ -168,6 +227,12 @@
 
     private DotNetObjectReference<object>? dotNetRef;
     private bool jsWired = false;
+
+    // Rating UI state
+    private bool showRatingPopover = false;
+    private int ratingValue = 0; // 1..5
+    private string ratingComment = "";
+    private string ratingError = "";
 
     protected override async Task OnInitializedAsync()
     {
@@ -204,6 +269,7 @@
 
         playbackQueue = savedSongs.Select(r => new PlayerSong
         {
+            SongId = r.Song.Id,
             Title = r.Song.Title ?? "Unknown Title",
             Artist = r.ArtistName ?? "Unknown",
             Image = r.Song.Cover_Art ?? "images/default-cover.png",
@@ -246,6 +312,7 @@
 
         playbackQueue = ordered.Select(r => new PlayerSong
         {
+            SongId = r.Song.Id,
             Title = r.Song.Title ?? "Unknown Title",
             Artist = r.ArtistName ?? "Unknown",
             Image = r.Song.Cover_Art ?? "images/default-cover.png",
@@ -268,11 +335,19 @@
         var s = playbackQueue[currentIndex];
         currentSong = new PlayerSong
         {
+            SongId = s.SongId,
             Title = s.Title,
             Artist = s.Artist,
             Image = s.Image,
             AudioPath = s.AudioPath
         };
+
+        // This page only plays liked songs.
+        isLiked = true;
+
+        // Close rating UI when switching songs
+        showRatingPopover = false;
+        ratingError = "";
 
         showPlayer = true;
 
@@ -305,8 +380,12 @@
         isPlaying = false;
         showPlayer = false;
 
+        showRatingPopover = false;
+        ratingError = "";
+
         currentSong = new PlayerSong
         {
+            SongId = 0,
             Title = "",
             Artist = "",
             Image = "",
@@ -315,6 +394,7 @@
 
         currentIndex = -1;
         shuffleHistory.Clear();
+        isLiked = true;
     }
 
     private async Task TogglePlayPause()
@@ -323,9 +403,45 @@
         await JSRuntime.InvokeVoidAsync("togglePlayPause");
     }
 
-    private void ToggleLike()
+    // On /usersongs, clicking should remove from library (like delete).
+    private async Task ToggleLike()
     {
-        isLiked = !isLiked;
+        if (!isLiked)
+            return;
+
+        var songId = currentSong.SongId;
+        if (songId <= 0)
+            return;
+
+        using var db = DbFactory.CreateDbContext();
+
+        var link = await db.UserSong.FirstOrDefaultAsync(us =>
+            us.UserId == currentUserId && us.SongId == songId);
+
+        if (link == null)
+            return;
+
+        db.UserSong.Remove(link);
+        await db.SaveChangesAsync();
+
+        isLiked = false;
+
+        savedSongs.RemoveAll(r => r.Song.Id == songId);
+        playbackQueue.RemoveAll(s => s.SongId == songId);
+
+        if (playbackQueue.Count == 0)
+        {
+            await ClosePlayer();
+            StateHasChanged();
+            return;
+        }
+
+        if (currentIndex >= playbackQueue.Count)
+            currentIndex = playbackQueue.Count - 1;
+
+        // Auto continue after removal.
+        await PlayIndex(currentIndex, forcePlay: true);
+        StateHasChanged();
     }
 
     private async Task PreviousSong()
@@ -484,6 +600,142 @@
         return string.Join("/", encodedParts);
     }
 
+    // Rating UI handlers
+    private async Task ToggleRatingPopover()
+    {
+        if (currentSong.SongId <= 0)
+            return;
+
+        showRatingPopover = !showRatingPopover;
+        ratingError = "";
+
+        if (showRatingPopover)
+        {
+            await LoadExistingRatingAsync(currentSong.SongId);
+        }
+    }
+
+    private void CloseRatingPopover()
+    {
+        showRatingPopover = false;
+        ratingError = "";
+    }
+
+    private void SetRating(int value)
+    {
+        if (value < 1) value = 1;
+        if (value > 5) value = 5;
+
+        ratingValue = value;
+        StateHasChanged();
+    }
+
+    private async Task LoadExistingRatingAsync(int songId)
+    {
+        ratingValue = 0;
+        ratingComment = "";
+
+        using var db = DbFactory.CreateDbContext();
+
+        var existing = await db.Rating.FirstOrDefaultAsync(r =>
+            r.UserId == currentUserId && r.SongId == songId);
+
+        if (existing != null)
+        {
+            ratingValue = existing.Value;
+            ratingComment = existing.Comment ?? "";
+        }
+    }
+
+    private async Task SaveRatingAsync()
+    {
+        ratingError = "";
+
+        if (currentSong.SongId <= 0)
+            return;
+
+        if (ratingValue < 1 || ratingValue > 5)
+        {
+            ratingError = "Please choose a rating.";
+            return;
+        }
+
+        using var db = DbFactory.CreateDbContext();
+
+        var songId = currentSong.SongId;
+
+        var existing = await db.Rating.FirstOrDefaultAsync(r =>
+            r.UserId == currentUserId && r.SongId == songId);
+
+        if (existing == null)
+        {
+            var rating = new Rating
+            {
+                UserId = currentUserId,
+                SongId = songId,
+                Value = ratingValue,
+                Comment = string.IsNullOrWhiteSpace(ratingComment) ? null : ratingComment.Trim(),
+                DateCreated = DateTime.Now,
+                DateUpdated = DateTime.Now,
+                CreatedBy = currentUserId,
+                UpdatedBy = currentUserId
+            };
+
+            db.Rating.Add(rating);
+        }
+        else
+        {
+            existing.Value = ratingValue;
+            existing.Comment = string.IsNullOrWhiteSpace(ratingComment) ? null : ratingComment.Trim();
+            existing.DateUpdated = DateTime.Now;
+            existing.UpdatedBy = currentUserId;
+
+            db.Rating.Update(existing);
+        }
+
+        await db.SaveChangesAsync();
+
+        showRatingPopover = false;
+        ratingError = "";
+        StateHasChanged();
+    }
+
+    // Admin methods for later pages
+    private async Task<double> GetAverageRatingForSongAsync(int songId)
+    {
+        using var db = DbFactory.CreateDbContext();
+
+        var values = await db.Rating
+            .Where(r => r.SongId == songId)
+            .Select(r => r.Value)
+            .ToListAsync();
+
+        if (values.Count == 0)
+            return 0;
+
+        return values.Average();
+    }
+
+    private async Task<int> GetRatingCountForSongAsync(int songId)
+    {
+        using var db = DbFactory.CreateDbContext();
+        return await db.Rating.CountAsync(r => r.SongId == songId);
+    }
+
+    private async Task<List<(int SongId, int Count)>> GetMostRatedSongsAsync(int top = 10)
+    {
+        using var db = DbFactory.CreateDbContext();
+
+        var list = await db.Rating
+            .GroupBy(r => r.SongId)
+            .Select(g => new { SongId = g.Key, Count = g.Count() })
+            .OrderByDescending(x => x.Count)
+            .Take(top)
+            .ToListAsync();
+
+        return list.Select(x => (x.SongId, x.Count)).ToList();
+    }
+
     private sealed class SavedSongRow
     {
         public UserSong UserSong { get; set; } = default!;
@@ -493,6 +745,7 @@
 
     private sealed class PlayerSong
     {
+        public int SongId { get; set; }
         public string Title { get; set; } = "";
         public string Artist { get; set; } = "";
         public string Image { get; set; } = "";

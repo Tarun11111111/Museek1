@@ -1,0 +1,263 @@
+﻿/* FILE: Pages/Ratings/Edit.razor.css */
+.page {
+    padding: 30px 60px;
+    font-family: "Poppins", sans-serif;
+    padding-bottom: 80px;
+}
+
+.top {
+    display: flex;
+    justify-content: space-between;
+    gap: 16px;
+    align-items: flex-start;
+    margin-bottom: 16px;
+}
+
+.title {
+    margin: 0;
+    font-size: 42px;
+    font-weight: 800;
+    color: white;
+}
+
+.subtitle {
+    margin-top: 6px;
+    color: rgba(255, 255, 255, 0.70);
+    font-size: 13px;
+}
+
+.top-actions {
+    display: flex;
+    gap: 10px;
+    flex-wrap: wrap;
+    justify-content: flex-end;
+}
+
+.btn {
+    text-decoration: none;
+    border: none;
+    border-radius: 12px;
+    padding: 10px 12px;
+    cursor: pointer;
+    background: rgba(255, 255, 255, 0.10);
+    color: white;
+    font-weight: 900;
+    display: inline-flex;
+    align-items: center;
+    justify-content: center;
+}
+
+    .btn:hover {
+        background: rgba(255, 255, 255, 0.16);
+    }
+
+    .btn.danger {
+        background: rgba(255, 0, 0, 0.18);
+    }
+
+    .btn.primary {
+        background: rgba(255, 105, 249, 0.28);
+    }
+
+.card {
+    border-radius: 16px;
+    border: 1px solid rgba(255,255,255,0.10);
+    background: rgba(255,255,255,0.04);
+    padding: 14px;
+}
+
+.song-card {
+    display: flex;
+    align-items: center;
+    gap: 12px;
+    min-width: 0;
+    margin-bottom: 14px;
+    border-radius: 14px;
+    border: 1px solid rgba(255,255,255,0.10);
+    background: rgba(255,255,255,0.04);
+    padding: 12px;
+}
+
+.song-cover {
+    width: 54px;
+    height: 54px;
+    border-radius: 12px;
+    object-fit: cover;
+    border: 1px solid rgba(255,255,255,0.10);
+    flex: 0 0 auto;
+}
+
+.song-card-meta {
+    display: flex;
+    flex-direction: column;
+    gap: 4px;
+    min-width: 0;
+}
+
+.song-title {
+    color: white;
+    font-weight: 900;
+    font-size: 14px;
+    white-space: nowrap;
+    overflow: hidden;
+    text-overflow: ellipsis;
+}
+
+.song-artist {
+    color: rgba(255,255,255,0.65);
+    font-size: 12px;
+    white-space: nowrap;
+    overflow: hidden;
+    text-overflow: ellipsis;
+}
+
+.grid {
+    display: grid;
+    grid-template-columns: repeat(2, minmax(0, 1fr));
+    gap: 14px;
+    margin-bottom: 14px;
+}
+
+.field {
+    border-radius: 14px;
+    border: 1px solid rgba(255,255,255,0.10);
+    background: rgba(255,255,255,0.04);
+    padding: 12px;
+}
+
+.label {
+    color: rgba(255,255,255,0.65);
+    font-size: 12px;
+    font-weight: 900;
+    text-transform: uppercase;
+    letter-spacing: 0.02em;
+}
+
+.value {
+    margin-top: 6px;
+    color: white;
+    font-weight: 800;
+    font-size: 14px;
+}
+
+.hint {
+    margin-top: 4px;
+    color: rgba(255,255,255,0.60);
+    font-size: 12px;
+}
+
+.muted {
+    color: rgba(255,255,255,0.65);
+}
+
+.form {
+    margin-top: 6px;
+    display: grid;
+    gap: 14px;
+}
+
+.form-row {
+    display: grid;
+    gap: 8px;
+}
+
+.form-label {
+    color: rgba(255,255,255,0.75);
+    font-weight: 900;
+    font-size: 12px;
+}
+
+.star-row {
+    display: flex;
+    gap: 8px;
+    align-items: center;
+}
+
+.star-btn {
+    border: none;
+    background: transparent;
+    cursor: pointer;
+    padding: 0;
+    line-height: 1;
+}
+
+.star {
+    font-size: 26px;
+    line-height: 26px;
+    display: inline-block;
+    user-select: none;
+}
+
+    .star.on {
+        color: #ffd44d !important;
+    }
+
+    .star.off {
+        color: rgba(255, 255, 255, 0.25) !important;
+    }
+
+.clear-btn {
+    margin-left: 6px;
+    border-radius: 10px;
+    width: 30px;
+    height: 30px;
+    display: inline-flex;
+    align-items: center;
+    justify-content: center;
+    background: rgba(255,255,255,0.08);
+    border: 1px solid rgba(255,255,255,0.10);
+}
+
+    .clear-btn:hover {
+        background: rgba(255,255,255,0.14);
+    }
+
+.clear-icon {
+    color: rgba(255,255,255,0.80);
+    font-size: 18px;
+    line-height: 18px;
+    font-weight: 900;
+    user-select: none;
+}
+
+.textarea {
+    width: 100%;
+    min-height: 110px;
+    resize: none;
+    border-radius: 14px;
+    border: 1px solid rgba(255, 255, 255, 0.10);
+    background: rgba(255, 255, 255, 0.06);
+    color: white;
+    padding: 10px 12px;
+    outline: none;
+}
+
+.form-actions {
+    display: flex;
+    gap: 10px;
+    justify-content: flex-end;
+    flex-wrap: wrap;
+}
+
+.valsum {
+    color: rgba(255,255,255,0.85);
+}
+
+.valmsg {
+    color: #ffb3b3;
+    font-size: 12px;
+}
+
+@media (max-width: 900px) {
+    .page {
+        padding: 24px 20px;
+    }
+
+    .grid {
+        grid-template-columns: 1fr;
+    }
+
+    .form-actions {
+        justify-content: flex-start;
+    }
+}

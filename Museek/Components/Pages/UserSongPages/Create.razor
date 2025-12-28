@@ -50,17 +50,20 @@
                                 @onclick="@(() => SaveSongAsync(s.Id))">
                             @if (saved)
                             {
-                                <span>Liked ❤️</span>
+                                <img src="images/Liked.png" class="btn-icon" alt="Liked" />
+                                <span class="btn-text">Liked</span>
                             }
                             else
                             {
-                                <span>♥ Like</span>
+                                <img src="images/Like.png" class="btn-icon" alt="Like" />
+                                <span class="btn-text">Like</span>
                             }
                         </button>
 
                         <button class="playlist-btn"
                                 @onclick="@(() => OpenAddToPlaylist(s))">
-                            + Add to Playlist
+                            <img src="images/AddToPlaylist.png" class="btn-icon" alt="Add to Playlist" />
+                            <span class="btn-text">Add to Playlist</span>
                         </button>
                     </div>
                 </div>

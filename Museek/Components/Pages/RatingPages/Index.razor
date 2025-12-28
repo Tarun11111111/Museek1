@@ -1,42 +1,336 @@
-﻿@page "/ratings"
+﻿@* FILE: Pages/Ratings/Index.razor *@
+@page "/ratings"
+@rendermode InteractiveServer
 @using Microsoft.EntityFrameworkCore
-@using Microsoft.AspNetCore.Components.QuickGrid
 @using Museek.Domain
 @using Museek.Data
-@implements IAsyncDisposable
-@inject IDbContextFactory<Museek.Data.MuseekContext> DbFactory
+@using Microsoft.AspNetCore.Identity
+@inject IDbContextFactory<MuseekContext> DbFactory
+@inject NavigationManager NavigationManager
+@inject UserManager<MuseekUser> UserManager
 
-<PageTitle>Index</PageTitle>
+<PageTitle>Ratings</PageTitle>
 
-<h1>Index</h1>
+<div class="ratings-page">
+    <div class="page-head">
+        <div>
+            <h1 class="page-title">Ratings</h1>
+            <div class="page-subtitle">Monitor user ratings and comments.</div>
+        </div>
 
-<p>
-    <a href="ratings/create">Create New</a>
-</p>
+        <div class="pill">
+            <span class="pill-label">Total</span>
+            <span class="pill-value">@TotalCount</span>
+        </div>
+    </div>
 
-<QuickGrid Class="table" Items="context.Rating">
-    <PropertyColumn Property="rating => rating.Comment" />
-    <PropertyColumn Property="rating => rating.UserId" />
-    <PropertyColumn Property="rating => rating.SongId" />
-    <PropertyColumn Property="rating => rating.DateCreated" />
-    <PropertyColumn Property="rating => rating.DateUpdated" />
-    <PropertyColumn Property="rating => rating.CreatedBy" />
-    <PropertyColumn Property="rating => rating.UpdatedBy" />
+    <div class="toolbar">
+        <div class="search">
+            <span class="search-icon">⌕</span>
+            <input class="search-input"
+                   placeholder="Search by song, artist, user, comment"
+                   @bind="searchText" />
+        </div>
 
-    <TemplateColumn Context="rating">
-        <a href="@($"ratings/edit?id={rating.Id}")">Edit</a> |
-        <a href="@($"ratings/details?id={rating.Id}")">Details</a> |
-        <a href="@($"ratings/delete?id={rating.Id}")">Delete</a>
-    </TemplateColumn>
-</QuickGrid>
+        <select class="select" @bind="valueFilter">
+            <option value="0">All ratings</option>
+            <option value="5">5 stars</option>
+            <option value="4">4 stars</option>
+            <option value="3">3 stars</option>
+            <option value="2">2 stars</option>
+            <option value="1">1 star</option>
+        </select>
+
+        <select class="select" @bind="sortMode">
+            <option value="newest">Newest</option>
+            <option value="oldest">Oldest</option>
+            <option value="high">Highest value</option>
+            <option value="low">Lowest value</option>
+        </select>
+
+        <button class="btn ghost" type="button" @onclick="ClearFilters">Clear</button>
+    </div>
+
+    <div class="table-card">
+        <div class="thead">
+            <div>Song</div>
+            <div>User ID</div>
+            <div>Name</div>
+            <div>Rating</div>
+            <div>Comment</div>
+            <div>Updated</div>
+            <div class="right">Actions</div>
+        </div>
+
+        @if (Rows.Count == 0)
+        {
+            <div class="empty">
+                No ratings found.
+            </div>
+        }
+        else
+        {
+            @foreach (var r in Rows)
+            {
+                <div class="trow">
+                    <div class="songcell">
+                        <img class="songimg" src="@r.SongImage" alt="Cover" />
+                        <div class="songmeta">
+                            <div class="songtitle">@r.SongTitle</div>
+                            <div class="songartist">@r.ArtistName</div>
+                        </div>
+                    </div>
+
+                    <div class="cell">
+                        <div class="truncate">
+                            <span>@ShortId(r.UserId)</span>
+                            <button type="button"
+                                    class="more-btn"
+                                    title="View full User ID"
+                                    @onclick="@(() => OpenTextModal("User ID", r.UserId))">
+                                ...
+                            </button>
+                        </div>
+                    </div>
+
+                    <div class="cell">
+                        <div class="truncate">
+                            <span>@ShortText(r.UserName)</span>
+                            <button type="button"
+                                    class="more-btn"
+                                    title="View full Name"
+                                    @onclick="@(() => OpenTextModal("Name", r.UserName))">
+                                ...
+                            </button>
+                        </div>
+                    </div>
+
+                    <div class="cell">
+                        <div class="ratingcell">
+                            <div class="stars" aria-label="@($"{r.Value}/5")">
+                                @for (int i = 1; i <= 5; i++)
+                                {
+                                    var on = r.Value >= i;
+                                    <span class="star @(on ? "on" : "off")">★</span>
+                                }
+                            </div>
+                            <div class="small">@r.Value/5</div>
+                        </div>
+                    </div>
+
+                    <div class="cell">
+                        <div class="truncate">
+                            <span>@ShortText(r.Comment)</span>
+                            <button type="button"
+                                    class="more-btn"
+                                    title="View full Comment"
+                                    @onclick="@(() => OpenTextModal("Comment", r.Comment))">
+                                ...
+                            </button>
+                        </div>
+                    </div>
+
+                    <div class="cell">
+                        <div class="datecell">
+                            <div class="date-top">@r.Updated.ToString("dd MMM yyyy")</div>
+                            <div class="date-bottom">@r.Updated.ToString("HH:mm")</div>
+                        </div>
+                    </div>
+
+                    <div class="cell right actions">
+                        <a class="action-link" href="@($"ratings/details?id={r.Id}")">Details</a>
+                        <a class="action-link" href="@($"ratings/edit?id={r.Id}")">Edit</a>
+                        <a class="action-link danger" href="@($"ratings/delete?id={r.Id}")">Delete</a>
+                    </div>
+                </div>
+            }
+        }
+    </div>
+</div>
+
+@if (showTextModal)
+{
+    <div class="modal-backdrop" @onclick="CloseTextModal">
+        <div class="modal-card" @onclick:stopPropagation="true">
+            <div class="modal-head">
+                <div class="modal-title">@modalTitle</div>
+                <button class="modal-close" type="button" @onclick="CloseTextModal">×</button>
+            </div>
+
+            <div class="modal-body">
+                <div class="modal-text">@modalText</div>
+            </div>
+
+            <div class="modal-actions">
+                <button class="btn" type="button" @onclick="CloseTextModal">Close</button>
+            </div>
+        </div>
+    </div>
+}
 
 @code {
-    private MuseekContext context = default!;
+    private List<RatingRow> Rows { get; set; } = new();
+    private int TotalCount { get; set; }
 
-    protected override void OnInitialized()
+    private string searchText = "";
+    private int valueFilter = 0; // 0 = all, 1..5
+    private string sortMode = "newest";
+
+    private bool showTextModal = false;
+    private string modalTitle = "";
+    private string modalText = "";
+
+    protected override async Task OnInitializedAsync()
     {
-        context = DbFactory.CreateDbContext();
+        await LoadAsync();
     }
 
-    public async ValueTask DisposeAsync() => await context.DisposeAsync();
+    protected override async Task OnParametersSetAsync()
+    {
+        await LoadAsync();
+    }
+
+    private async Task LoadAsync()
+    {
+        using var db = DbFactory.CreateDbContext();
+
+        var ratingsQuery = db.Rating.AsNoTracking();
+        var songsQuery = db.Song.AsNoTracking();
+        var artistsQuery = db.Artist.AsNoTracking();
+
+        var query =
+            from r in ratingsQuery
+            join s in songsQuery on r.SongId equals s.Id
+            join a in artistsQuery on s.ArtistId equals a.Id into ag
+            from a in ag.DefaultIfEmpty()
+            select new RatingRow
+            {
+                Id = r.Id,
+                UserId = r.UserId,
+                UserName = r.UserId,
+                SongId = r.SongId,
+                SongTitle = s.Title ?? "Unknown",
+                SongImage = string.IsNullOrWhiteSpace(s.Cover_Art) ? "images/default-cover.png" : s.Cover_Art!,
+                ArtistName = (a != null ? a.Name : "Unknown"),
+                Value = r.Value,
+                Comment = r.Comment ?? "",
+                Updated = r.DateUpdated
+            };
+
+        if (!string.IsNullOrWhiteSpace(searchText))
+        {
+            var t = searchText.Trim();
+
+            query = query.Where(x =>
+                (x.SongTitle ?? "").Contains(t, StringComparison.OrdinalIgnoreCase)
+                || (x.ArtistName ?? "").Contains(t, StringComparison.OrdinalIgnoreCase)
+                || (x.UserId ?? "").Contains(t, StringComparison.OrdinalIgnoreCase)
+                || (x.UserName ?? "").Contains(t, StringComparison.OrdinalIgnoreCase)
+                || (x.Comment ?? "").Contains(t, StringComparison.OrdinalIgnoreCase));
+        }
+
+        if (valueFilter >= 1 && valueFilter <= 5)
+        {
+            query = query.Where(x => x.Value == valueFilter);
+        }
+
+        query = sortMode switch
+        {
+            "oldest" => query.OrderBy(x => x.Updated),
+            "high" => query.OrderByDescending(x => x.Value).ThenByDescending(x => x.Updated),
+            "low" => query.OrderBy(x => x.Value).ThenByDescending(x => x.Updated),
+            _ => query.OrderByDescending(x => x.Updated)
+        };
+
+        Rows = await query.ToListAsync();
+
+        var distinctUserIds = Rows
+            .Select(x => x.UserId)
+            .Where(x => !string.IsNullOrWhiteSpace(x))
+            .Distinct(StringComparer.OrdinalIgnoreCase)
+            .ToList();
+
+        var userNameMap = new Dictionary<string, string>(StringComparer.OrdinalIgnoreCase);
+
+        foreach (var uid in distinctUserIds)
+        {
+            var user = await UserManager.FindByIdAsync(uid);
+            var name = user?.Email ?? user?.UserName ?? uid;
+            userNameMap[uid] = name;
+        }
+
+        foreach (var row in Rows)
+        {
+            if (!string.IsNullOrWhiteSpace(row.UserId) && userNameMap.TryGetValue(row.UserId, out var name))
+            {
+                row.UserName = name;
+            }
+            else
+            {
+                row.UserName = row.UserId;
+            }
+        }
+
+        TotalCount = await db.Rating.CountAsync();
+    }
+
+    private async Task ClearFilters()
+    {
+        searchText = "";
+        valueFilter = 0;
+        sortMode = "newest";
+        await LoadAsync();
+    }
+
+    private void OpenTextModal(string title, string text)
+    {
+        modalTitle = title;
+        modalText = text ?? "";
+        showTextModal = true;
+    }
+
+    private void CloseTextModal()
+    {
+        showTextModal = false;
+        modalTitle = "";
+        modalText = "";
+    }
+
+    private static string ShortId(string? id)
+    {
+        if (string.IsNullOrWhiteSpace(id))
+            return "";
+
+        var s = id.Trim();
+        if (s.Length <= 16)
+            return s;
+
+        return $"{s.Substring(0, 8)}…{s.Substring(s.Length - 4, 4)}";
+    }
+
+    private static string ShortText(string? text, int max = 26)
+    {
+        if (string.IsNullOrWhiteSpace(text))
+            return "";
+
+        var s = text.Trim();
+        if (s.Length <= max)
+            return s;
+
+        return s.Substring(0, max) + "…";
+    }
+
+    private sealed class RatingRow
+    {
+        public int Id { get; set; }
+        public string UserId { get; set; } = "";
+        public string UserName { get; set; } = "";
+        public int SongId { get; set; }
+        public string SongTitle { get; set; } = "";
+        public string SongImage { get; set; } = "images/default-cover.png";
+        public string ArtistName { get; set; } = "";
+        public int Value { get; set; }
+        public string Comment { get; set; } = "";
+        public DateTime Updated { get; set; }
+    }
 }

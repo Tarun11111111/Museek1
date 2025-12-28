@@ -1,119 +1,230 @@
 ﻿@page "/ratings/edit"
+@rendermode InteractiveServer
 @using Microsoft.EntityFrameworkCore
 @using Museek.Domain
-@inject IDbContextFactory<Museek.Data.MuseekContext> DbFactory
+@using Museek.Data
+@using System.ComponentModel.DataAnnotations
+@inject IDbContextFactory<MuseekContext> DbFactory
 @inject NavigationManager NavigationManager
+@attribute [Authorize(Roles = "Administrator")]
 
-<PageTitle>Edit</PageTitle>
+<PageTitle>Edit Rating</PageTitle>
 
-<h1>Edit</h1>
+<div class="page">
+    <div class="top">
+        <div>
+            <h1 class="title">Edit Rating</h1>
+            <div class="subtitle">Update value and comment. Other fields are read-only.</div>
+        </div>
 
-<h2>Rating</h2>
-<hr />
-@if (Rating is null)
-{
-    <p><em>Loading...</em></p>
-}
-else
-{
-    <div class="row">
-        <div class="col-md-4">
-            <EditForm method="post" Model="Rating" OnValidSubmit="UpdateRating" FormName="edit" Enhance>
-                <DataAnnotationsValidator />
-                <ValidationSummary role="alert"/>
-                <input type="hidden" name="Rating.Id" value="@Rating.Id" />
-                <div class="mb-3">
-                    <label for="comment" class="form-label">Comment:</label>
-                    <InputText id="comment" @bind-Value="Rating.Comment" class="form-control" />
-                    <ValidationMessage For="() => Rating.Comment" class="text-danger" />
-                </div>
-                <div class="mb-3">
-                    <label for="userid" class="form-label">UserId:</label>
-                    <InputNumber id="userid" @bind-Value="Rating.UserId" class="form-control" />
-                    <ValidationMessage For="() => Rating.UserId" class="text-danger" />
-                </div>
-                <div class="mb-3">
-                    <label for="songid" class="form-label">SongId:</label>
-                    <InputNumber id="songid" @bind-Value="Rating.SongId" class="form-control" />
-                    <ValidationMessage For="() => Rating.SongId" class="text-danger" />
-                </div>
-                <div class="mb-3">
-                    <label for="datecreated" class="form-label">DateCreated:</label>
-                    <InputDate id="datecreated" @bind-Value="Rating.DateCreated" class="form-control" />
-                    <ValidationMessage For="() => Rating.DateCreated" class="text-danger" />
-                </div>
-                <div class="mb-3">
-                    <label for="dateupdated" class="form-label">DateUpdated:</label>
-                    <InputDate id="dateupdated" @bind-Value="Rating.DateUpdated" class="form-control" />
-                    <ValidationMessage For="() => Rating.DateUpdated" class="text-danger" />
-                </div>
-                <div class="mb-3">
-                    <label for="createdby" class="form-label">CreatedBy:</label>
-                    <InputText id="createdby" @bind-Value="Rating.CreatedBy" class="form-control" />
-                    <ValidationMessage For="() => Rating.CreatedBy" class="text-danger" />
-                </div>
-                <div class="mb-3">
-                    <label for="updatedby" class="form-label">UpdatedBy:</label>
-                    <InputText id="updatedby" @bind-Value="Rating.UpdatedBy" class="form-control" />
-                    <ValidationMessage For="() => Rating.UpdatedBy" class="text-danger" />
-                </div>
-                <button type="submit" class="btn btn-primary">Save</button>
-            </EditForm>
+        <div class="top-actions">
+            @if (rating != null)
+            {
+                <a class="btn danger" href="@($"/ratings/delete?id={rating.Id}")">Delete</a>
+            }
+            <a class="btn" href="/ratings">Back</a>
         </div>
     </div>
-}
 
-<div>
-    <a href="/ratings">Back to List</a>
+    @if (loading)
+    {
+        <div class="card">
+            <div class="muted">Loading...</div>
+        </div>
+    }
+    else if (rating == null)
+    {
+        <div class="card">
+            <div class="muted">Not found.</div>
+        </div>
+    }
+    else
+    {
+        <div class="card">
+            <div class="song-card">
+                <img class="song-cover" src="@songCover" alt="Cover" />
+                <div class="song-card-meta">
+                    <div class="song-title">@songTitle</div>
+                    <div class="song-artist">@artistName</div>
+                </div>
+            </div>
+
+            <div class="grid">
+                <div class="field">
+                    <div class="label">User ID</div>
+                    <div class="value">@rating.UserId</div>
+                </div>
+
+                <div class="field">
+                    <div class="label">Name</div>
+                    <div class="value">@userName</div>
+                </div>
+
+                <div class="field">
+                    <div class="label">Created</div>
+                    <div class="value">@rating.DateCreated.ToString("dd MMM yyyy, HH:mm")</div>
+                </div>
+
+                <div class="field">
+                    <div class="label">Updated</div>
+                    <div class="value">@rating.DateUpdated.ToString("dd MMM yyyy, HH:mm")</div>
+                </div>
+            </div>
+
+            <EditForm class="form" Model="form" OnValidSubmit="SaveAsync">
+                <DataAnnotationsValidator />
+                <ValidationSummary class="valsum" />
+
+                <div class="form-row">
+                    <label class="form-label">Rating</label>
+                    <div class="star-row" role="radiogroup" aria-label="Rating">
+                        @for (int i = 1; i <= 5; i++)
+                        {
+                            var starValue = i;
+                            var on = form.Value >= starValue;
+
+                            <button type="button"
+                                    class="star-btn"
+                                    aria-label="Set @starValue star"
+                                    aria-pressed="@(on)"
+                                    @onclick="@(() => SetValue(starValue))">
+                                <span class="star @(on ? "on" : "off")">★</span>
+                            </button>
+                        }
+
+                        <button type="button"
+                                class="star-btn clear-btn"
+                                aria-label="Clear rating"
+                                @onclick="@(() => SetValue(0))">
+                            <span class="clear-icon">×</span>
+                        </button>
+                    </div>
+
+                    <div class="hint">@(form.Value == 0 ? "No rating" : $"{form.Value}/5")</div>
+                    <ValidationMessage For="() => form.Value" class="valmsg" />
+                </div>
+
+                <div class="form-row">
+                    <label class="form-label">Comment (optional)</label>
+                    <textarea class="textarea" @bind="form.Comment" placeholder="Add some notes"></textarea>
+                    <ValidationMessage For="() => form.Comment" class="valmsg" />
+                </div>
+
+                <div class="form-actions">
+                    <button class="btn primary" type="submit" disabled="@saving">
+                        @(saving ? "Saving..." : "Save")
+                    </button>
+                    <a class="btn" href="/ratings">Cancel</a>
+                </div>
+            </EditForm>
+        </div>
+    }
 </div>
 
 @code {
-    [SupplyParameterFromQuery]
-    private int Id { get; set; }
+    [SupplyParameterFromQuery] private int Id { get; set; }
 
-    [SupplyParameterFromForm]
-    private Rating? Rating { get; set; }
+    private bool loading = true;
+    private bool saving = false;
+
+    private Rating? rating;
+
+    private string songTitle = "Unknown";
+    private string songCover = "images/default-cover.png";
+    private string artistName = "Unknown";
+
+    private string userName = "Unknown";
+
+    private EditRatingForm form = new();
 
     protected override async Task OnInitializedAsync()
     {
-        using var context = DbFactory.CreateDbContext();
-        Rating ??= await context.Rating.FirstOrDefaultAsync(m => m.Id == Id);
+        using var db = DbFactory.CreateDbContext();
 
-        if (Rating is null)
+        rating = await db.Rating.FirstOrDefaultAsync(r => r.Id == Id);
+        if (rating == null)
         {
+            loading = false;
             NavigationManager.NavigateTo("notfound");
+            return;
         }
-    }
 
-    // To protect from overposting attacks, enable the specific properties you want to bind to.
-    // For more information, see https://learn.microsoft.com/aspnet/core/blazor/forms/#mitigate-overposting-attacks.
-    private async Task UpdateRating()
-    {
-        using var context = DbFactory.CreateDbContext();
-        context.Attach(Rating!).State = EntityState.Modified;
+        var song = await db.Song.FirstOrDefaultAsync(s => s.Id == rating.SongId);
+        if (song != null)
+        {
+            songTitle = song.Title ?? "Unknown";
+            songCover = string.IsNullOrWhiteSpace(song.Cover_Art) ? "images/default-cover.png" : song.Cover_Art;
+
+            var artist = await db.Artist.FirstOrDefaultAsync(a => a.Id == song.ArtistId);
+            artistName = artist?.Name ?? "Unknown";
+        }
 
         try
         {
-            await context.SaveChangesAsync();
+            var u = await db.Users
+                .Where(x => x.Id == rating.UserId)
+                .Select(x => new { x.UserName, x.Email, x.Id })
+                .FirstOrDefaultAsync();
+
+            if (u != null)
+            {
+                userName = !string.IsNullOrWhiteSpace(u.UserName) ? u.UserName
+                    : !string.IsNullOrWhiteSpace(u.Email) ? u.Email
+                    : u.Id;
+            }
         }
-        catch (DbUpdateConcurrencyException)
+        catch
         {
-            if (!RatingExists(Rating!.Id))
-            {
-                NavigationManager.NavigateTo("notfound");
-            }
-            else
-            {
-                throw;
-            }
+            userName = "Unknown";
         }
 
-        NavigationManager.NavigateTo("/ratings");
+        form = new EditRatingForm
+        {
+            Value = rating.Value,
+            Comment = rating.Comment ?? ""
+        };
+
+        loading = false;
     }
 
-    private bool RatingExists(int id)
+    private void SetValue(int v)
     {
-        using var context = DbFactory.CreateDbContext();
-        return context.Rating.Any(e => e.Id == id);
+        form.Value = v;
+        StateHasChanged();
+    }
+
+    private async Task SaveAsync()
+    {
+        if (rating == null)
+            return;
+
+        saving = true;
+
+        using var db = DbFactory.CreateDbContext();
+
+        var entity = await db.Rating.FirstOrDefaultAsync(r => r.Id == rating.Id);
+        if (entity == null)
+        {
+            saving = false;
+            NavigationManager.NavigateTo("notfound");
+            return;
+        }
+
+        entity.Value = form.Value;
+        entity.Comment = string.IsNullOrWhiteSpace(form.Comment) ? null : form.Comment.Trim();
+        entity.DateUpdated = DateTime.Now;
+
+        await db.SaveChangesAsync();
+
+        saving = false;
+        NavigationManager.NavigateTo($"/ratings/details?id={entity.Id}");
+    }
+
+    private sealed class EditRatingForm
+    {
+        [Range(0, 5, ErrorMessage = "Rating must be between 0 and 5.")]
+        public int Value { get; set; } = 0;
+
+        public string? Comment { get; set; }
     }
 }

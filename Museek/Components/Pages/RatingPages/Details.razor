@@ -1,58 +1,158 @@
 ﻿@page "/ratings/details"
+@rendermode InteractiveServer
 @using Microsoft.EntityFrameworkCore
 @using Museek.Domain
-@inject IDbContextFactory<Museek.Data.MuseekContext> DbFactory
+@using Museek.Data
+@inject IDbContextFactory<MuseekContext> DbFactory
 @inject NavigationManager NavigationManager
+@attribute [Authorize(Roles = "Administrator")]
 
-<PageTitle>Details</PageTitle>
+<PageTitle>Rating Details</PageTitle>
 
-<h1>Details</h1>
-
-<div>
-    <h2>Rating</h2>
-    <hr />
-    @if (rating is null)
-    {
-        <p><em>Loading...</em></p>
-    }
-    else {
-        <dl class="row">
-            <dt class="col-sm-2">Comment</dt>
-            <dd class="col-sm-10">@rating.Comment</dd>
-            <dt class="col-sm-2">UserId</dt>
-            <dd class="col-sm-10">@rating.UserId</dd>
-            <dt class="col-sm-2">SongId</dt>
-            <dd class="col-sm-10">@rating.SongId</dd>
-            <dt class="col-sm-2">DateCreated</dt>
-            <dd class="col-sm-10">@rating.DateCreated</dd>
-            <dt class="col-sm-2">DateUpdated</dt>
-            <dd class="col-sm-10">@rating.DateUpdated</dd>
-            <dt class="col-sm-2">CreatedBy</dt>
-            <dd class="col-sm-10">@rating.CreatedBy</dd>
-            <dt class="col-sm-2">UpdatedBy</dt>
-            <dd class="col-sm-10">@rating.UpdatedBy</dd>
-        </dl>
+<div class="page">
+    <div class="top">
         <div>
-            <a href="@($"/ratings/edit?id={rating.Id}")">Edit</a> |
-            <a href="@($"/ratings")">Back to List</a>
+            <h1 class="title">Rating Details</h1>
+            <div class="subtitle">Review a single rating record.</div>
+        </div>
+
+        <div class="top-actions">
+            @if (rating != null)
+            {
+                <a class="btn" href="@($"/ratings/edit?id={rating.Id}")">Edit</a>
+                <a class="btn danger" href="@($"/ratings/delete?id={rating.Id}")">Delete</a>
+            }
+            <a class="btn" href="/ratings">Back</a>
+        </div>
+    </div>
+
+    @if (loading)
+    {
+        <div class="card">
+            <div class="muted">Loading...</div>
+        </div>
+    }
+    else if (rating == null)
+    {
+        <div class="card">
+            <div class="muted">Not found.</div>
+        </div>
+    }
+    else
+    {
+        <div class="card">
+            <div class="song-card">
+                <img class="song-cover" src="@songCover" alt="Cover" />
+                <div class="song-card-meta">
+                    <div class="song-title">@songTitle</div>
+                    <div class="song-artist">@artistName</div>
+                </div>
+            </div>
+
+            <div class="grid">
+                <div class="field">
+                    <div class="label">User ID</div>
+                    <div class="value">@rating.UserId</div>
+                </div>
+
+                <div class="field">
+                    <div class="label">Name</div>
+                    <div class="value">@userName</div>
+                </div>
+
+                <div class="field">
+                    <div class="label">Rating</div>
+                    <div class="stars" aria-label="@($"{rating.Value} out of 5")">
+                        @for (int i = 1; i <= 5; i++)
+                        {
+                            <span class="star @(i <= rating.Value ? "on" : "off")">★</span>
+                        }
+                    </div>
+                    <div class="hint">@rating.Value/5</div>
+                </div>
+
+                <div class="field field-wide">
+                    <div class="label">Comment</div>
+                    @if (string.IsNullOrWhiteSpace(rating.Comment))
+                    {
+                        <div class="muted">No comment</div>
+                    }
+                    else
+                    {
+                        <div class="value">@rating.Comment</div>
+                    }
+                </div>
+
+                <div class="field">
+                    <div class="label">Created</div>
+                    <div class="value">@rating.DateCreated.ToString("dd MMM yyyy, HH:mm")</div>
+                    <div class="hint">By: @rating.CreatedBy</div>
+                </div>
+
+                <div class="field">
+                    <div class="label">Updated</div>
+                    <div class="value">@rating.DateUpdated.ToString("dd MMM yyyy, HH:mm")</div>
+                    <div class="hint">By: @rating.UpdatedBy</div>
+                </div>
+            </div>
         </div>
     }
 </div>
 
 @code {
+    [SupplyParameterFromQuery] private int Id { get; set; }
+
+    private bool loading = true;
+
     private Rating? rating;
 
-    [SupplyParameterFromQuery]
-    private int Id { get; set; }
+    private string songTitle = "Unknown";
+    private string songCover = "images/default-cover.png";
+    private string artistName = "Unknown";
+
+    private string userName = "Unknown";
 
     protected override async Task OnInitializedAsync()
     {
-        using var context = DbFactory.CreateDbContext();
-        rating = await context.Rating.FirstOrDefaultAsync(m => m.Id == Id);
+        using var db = DbFactory.CreateDbContext();
 
-        if (rating is null)
+        rating = await db.Rating.FirstOrDefaultAsync(r => r.Id == Id);
+        if (rating == null)
         {
+            loading = false;
             NavigationManager.NavigateTo("notfound");
+            return;
         }
+
+        var song = await db.Song.FirstOrDefaultAsync(s => s.Id == rating.SongId);
+        if (song != null)
+        {
+            songTitle = song.Title ?? "Unknown";
+            songCover = string.IsNullOrWhiteSpace(song.Cover_Art) ? "images/default-cover.png" : song.Cover_Art;
+
+            var artist = await db.Artist.FirstOrDefaultAsync(a => a.Id == song.ArtistId);
+            artistName = artist?.Name ?? "Unknown";
+        }
+
+        try
+        {
+            var u = await db.Users
+                .Where(x => x.Id == rating.UserId)
+                .Select(x => new { x.UserName, x.Email, x.Id })
+                .FirstOrDefaultAsync();
+
+            if (u != null)
+            {
+                userName = !string.IsNullOrWhiteSpace(u.UserName) ? u.UserName
+                    : !string.IsNullOrWhiteSpace(u.Email) ? u.Email
+                    : u.Id;
+            }
+        }
+        catch
+        {
+            userName = "Unknown";
+        }
+
+        loading = false;
     }
 }

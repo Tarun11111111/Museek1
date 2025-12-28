@@ -57,6 +57,12 @@
                     </NavLink>
                 </AuthorizeView>
 
+                <AuthorizeView Roles="Administrator" Context="adminCtx">
+                    | <NavLink href="/ratings">
+                        <img src="images/dashboard.png" class="icon" /> Rating
+                    </NavLink>
+                </AuthorizeView>
+
             </div>
 
             <!-- Right: User + Logout -->
