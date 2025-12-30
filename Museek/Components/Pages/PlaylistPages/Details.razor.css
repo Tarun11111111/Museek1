@@ -1,5 +1,4 @@
-﻿/* FILE: Pages/Playlists/Details.razor.css */
-.page {
+﻿.page {
     padding: 30px 60px;
     font-family: "Poppins", sans-serif;
     padding-bottom: 140px;
@@ -29,7 +28,7 @@
 .meta {
     display: flex;
     flex-direction: column;
-    gap: 4px;
+    gap: 6px;
 }
 
 .title {
@@ -41,6 +40,29 @@
 .desc {
     color: rgba(255, 255, 255, 0.70);
     font-size: 13px;
+}
+
+.admin-field {
+    display: grid;
+    gap: 6px;
+    margin-top: 2px;
+}
+
+.admin-label {
+    color: rgba(255, 255, 255, 0.75);
+    font-weight: 800;
+    font-size: 12px;
+    text-transform: uppercase;
+    letter-spacing: 0.02em;
+}
+
+.admin-input {
+    border-radius: 12px;
+    border: 1px solid rgba(255, 255, 255, 0.10);
+    background: rgba(255, 255, 255, 0.06);
+    color: rgba(255, 255, 255, 0.90);
+    padding: 10px 12px;
+    outline: none;
 }
 
 .header-actions {
@@ -275,7 +297,7 @@
         cursor: not-allowed;
     }
 
-/* Sticky player (same as UserSongs Index) */
+/* Sticky player */
 .global-player-container {
     position: fixed;
     left: 0;
@@ -299,7 +321,6 @@
         gap: 18px;
     }
 
-/* close */
 .close-button {
     position: absolute;
     top: 8px;
@@ -315,7 +336,6 @@
     cursor: pointer;
 }
 
-/* player internals */
 .player-left {
     display: flex;
     align-items: center;

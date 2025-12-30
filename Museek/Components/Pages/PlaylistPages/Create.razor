@@ -29,6 +29,15 @@
             <InputText class="input" @bind-Value="Playlist.Description" />
         </div>
 
+        @if (isAdmin)
+        {
+            <div class="field">
+                <label>Curated Category</label>
+                <InputText class="input" @bind-Value="Playlist.CuratedCategory" />
+                <div class="hint">Used to group curated playlists on Discover.</div>
+            </div>
+        }
+
         <div class="field">
             <label>Cover Image (optional)</label>
 
@@ -62,6 +71,8 @@
     private MuseekContext context = default!;
     private string currentUserId = string.Empty;
 
+    private bool isAdmin = false;
+
     private Playlist Playlist { get; set; } = new();
 
     private IBrowserFile? selectedCoverFile;
@@ -78,6 +89,8 @@
 
         var authState = await AuthenticationStateProvider.GetAuthenticationStateAsync();
         var user = authState.User;
+
+        isAdmin = user.IsInRole("Administrator");
 
         currentUserId =
             user.FindFirst(ClaimTypes.NameIdentifier)?.Value
@@ -137,6 +150,18 @@
             }
         }
 
+        Playlist.IsCurated = false;
+        Playlist.IsPublic = false;
+
+        if (!isAdmin)
+        {
+            Playlist.CuratedCategory = null;
+        }
+        else
+        {
+            Playlist.CuratedCategory = NormalizeCategoryOrNull(Playlist.CuratedCategory);
+        }
+
         Playlist.UserId = currentUserId;
         Playlist.CreatedBy = currentUserId;
         Playlist.UpdatedBy = currentUserId;
@@ -147,6 +172,12 @@
         await db.SaveChangesAsync();
 
         NavigationManager.NavigateTo("/userlibrary");
+    }
+
+    private static string? NormalizeCategoryOrNull(string? value)
+    {
+        var v = (value ?? "").Trim();
+        return string.IsNullOrWhiteSpace(v) ? null : v;
     }
 
     private static async Task<string> SaveCoverToWwwRootAsync(IBrowserFile file)

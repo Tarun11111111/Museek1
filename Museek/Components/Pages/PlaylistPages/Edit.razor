@@ -37,6 +37,15 @@ else
                 <InputText class="input" @bind-Value="Playlist.Description" />
             </div>
 
+            @if (isAdmin)
+            {
+                <div class="field">
+                    <label>Curated Category</label>
+                    <InputText class="input" @bind-Value="Playlist.CuratedCategory" disabled="@(!Playlist.IsCurated)" />
+                    <div class="hint">Used to group curated playlists on Discover.</div>
+                </div>
+            }
+
             <div class="field">
                 <label>Cover Image</label>
 
@@ -69,6 +78,8 @@ else
     private MuseekContext context = default!;
     private string currentUserId = string.Empty;
 
+    private bool isAdmin = false;
+
     [SupplyParameterFromQuery] private int Id { get; set; }
     [SupplyParameterFromForm] private Playlist? Playlist { get; set; }
 
@@ -88,6 +99,8 @@ else
         var authState = await AuthenticationStateProvider.GetAuthenticationStateAsync();
         var user = authState.User;
 
+        isAdmin = user.IsInRole("Administrator");
+
         currentUserId =
             user.FindFirst(ClaimTypes.NameIdentifier)?.Value
             ?? user.FindFirst("userId")?.Value
@@ -106,7 +119,6 @@ else
             return;
         }
 
-        var isAdmin = user.IsInRole("Administrator");
         var canEdit = isAdmin || Playlist.UserId == currentUserId;
         if (!canEdit)
         {
@@ -144,7 +156,6 @@ else
 
         selectedCoverFile = file;
 
-        // Preview immediately (data URL)
         using var stream = file.OpenReadStream(maxAllowedSize: maxBytes);
         using var ms = new MemoryStream();
         await stream.CopyToAsync(ms);
@@ -159,7 +170,13 @@ else
 
         using var db = DbFactory.CreateDbContext();
 
-        // If a new cover is selected, save into wwwroot/images/playlists and store path in Cover_Image.
+        var existing = await db.Playlist.AsNoTracking().FirstOrDefaultAsync(p => p.Id == Playlist.Id);
+        if (existing == null)
+        {
+            NavigationManager.NavigateTo("notfound");
+            return;
+        }
+
         if (selectedCoverFile != null)
         {
             var savedPath = await SaveCoverToWwwRootAsync(selectedCoverFile);
@@ -167,6 +184,18 @@ else
             {
                 Playlist.Cover_Image = savedPath;
             }
+        }
+
+        if (!isAdmin)
+        {
+            Playlist.IsCurated = existing.IsCurated;
+            Playlist.IsPublic = existing.IsPublic;
+            Playlist.CuratedCategory = existing.CuratedCategory;
+        }
+        else
+            
+        {
+            Playlist.CuratedCategory = NormalizeCategoryOrNull(Playlist.CuratedCategory);
         }
 
         Playlist.DateUpdated = DateTime.Now;
@@ -178,10 +207,14 @@ else
         NavigationManager.NavigateTo($"/playlists/details?id={Playlist.Id}");
     }
 
+    private static string? NormalizeCategoryOrNull(string? value)
+    {
+        var v = (value ?? "").Trim();
+        return string.IsNullOrWhiteSpace(v) ? null : v;
+    }
+
     private static async Task<string> SaveCoverToWwwRootAsync(IBrowserFile file)
     {
-        // Writes to: wwwroot/images/playlists/<guid>.<ext>
-        // Stores relative URL: images/playlists/<guid>.<ext>
         var ext = Path.GetExtension(file.Name);
         if (string.IsNullOrWhiteSpace(ext))
             ext = ".png";

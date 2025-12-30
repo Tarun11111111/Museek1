@@ -1,0 +1,67 @@
+﻿@* FILE: Pages/CuratedPlaylists/Index.razor (or your /curatedplaylists page) *@
+@page "/curatedplaylists"
+@rendermode InteractiveServer
+@using Microsoft.EntityFrameworkCore
+@using Museek.Domain
+@using Museek.Data
+@inject IDbContextFactory<MuseekContext> DbFactory
+@attribute [Authorize(Roles = "Administrator")]
+
+<PageTitle>Curated Playlists</PageTitle>
+
+<div class="library-page">
+    <h1 class="page-title">Curated Playlists</h1>
+
+    <div class="top-actions">
+        <div class="search-bar">
+            <img src="images/search.png" class="search-icon" />
+            <input type="text" placeholder="Search curated playlists" @bind="searchText" />
+        </div>
+
+        <a href="/curatedplaylists/create" class="upload-btn">+ New Curated Playlist</a>
+    </div>
+
+    <div class="playlist-grid">
+        @if (!FilteredPlaylists.Any())
+        {
+            <div class="empty-row">No curated playlists found.</div>
+        }
+        else
+        {
+            @foreach (var p in FilteredPlaylists)
+            {
+                <a class="playlist-card" href="@($"/playlists/details?id={p.Id}")">
+                    <img src="@(!string.IsNullOrWhiteSpace(p.Cover_Image) ? p.Cover_Image : "images/default-cover.jpg")"
+                         class="playlist-img" />
+                    <div class="playlist-meta">
+                        <div class="playlist-title">@p.Name</div>
+                        <div class="playlist-desc">@p.Description</div>
+                    </div>
+                </a>
+            }
+        }
+    </div>
+</div>
+
+@code {
+    private string searchText = "";
+    private List<Playlist> playlists = new();
+
+    protected override async Task OnInitializedAsync()
+    {
+        using var db = DbFactory.CreateDbContext();
+
+        // Admin page should show ALL curated playlists, even if not public yet.
+        playlists = await db.Playlist
+            .Where(p => p.IsCurated == true)
+            .OrderByDescending(p => p.DateCreated)
+            .ToListAsync();
+    }
+
+    private IEnumerable<Playlist> FilteredPlaylists =>
+        string.IsNullOrWhiteSpace(searchText)
+            ? playlists
+            : playlists.Where(p =>
+                (p.Name ?? "").Contains(searchText, StringComparison.OrdinalIgnoreCase)
+                || (p.Description ?? "").Contains(searchText, StringComparison.OrdinalIgnoreCase));
+}

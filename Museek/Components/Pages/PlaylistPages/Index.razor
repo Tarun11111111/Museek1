@@ -1,14 +1,12 @@
 ﻿@page "/userlibrary"
 @rendermode InteractiveServer
 @using Microsoft.EntityFrameworkCore
-@using Microsoft.AspNetCore.Identity
 @using System.Security.Claims
 @using Museek.Domain
 @using Museek.Data
 @inject IDbContextFactory<MuseekContext> DbFactory
 @inject AuthenticationStateProvider AuthenticationStateProvider
 @inject NavigationManager NavigationManager
-@inject UserManager<MuseekUser> UserManager
 @attribute [Authorize]
 
 <PageTitle>Library</PageTitle>
@@ -48,6 +46,12 @@
 
                     <div class="playlist-meta">
                         <div class="playlist-title">@p.Name</div>
+
+                        @if (isAdmin && !string.IsNullOrWhiteSpace(p.CuratedCategory))
+                        {
+                            <div class="playlist-chip">@p.CuratedCategory</div>
+                        }
+
                         <div class="playlist-desc">@p.Description</div>
                     </div>
                 </a>
@@ -62,8 +66,9 @@
     private string currentUserId = string.Empty;
     private string searchText = "";
 
+    private bool isAdmin = false;
+
     private List<Playlist> playlists = new();
-    private List<string> adminUserIds = new();
 
     protected override async Task OnInitializedAsync()
     {
@@ -71,6 +76,8 @@
 
         var authState = await AuthenticationStateProvider.GetAuthenticationStateAsync();
         var user = authState.User;
+
+        isAdmin = user.IsInRole("Administrator");
 
         currentUserId =
             user.FindFirst(ClaimTypes.NameIdentifier)?.Value
@@ -83,11 +90,8 @@
             return;
         }
 
-        var admins = await UserManager.GetUsersInRoleAsync("Administrator");
-        adminUserIds = admins.Select(a => a.Id).ToList();
-
         playlists = await context.Playlist
-            .Where(p => p.UserId == currentUserId || adminUserIds.Contains(p.UserId))
+            .Where(p => p.UserId == currentUserId && p.IsCurated == false)
             .OrderByDescending(p => p.DateCreated)
             .ToListAsync();
     }

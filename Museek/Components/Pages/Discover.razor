@@ -1,46 +1,218 @@
-﻿@page "/discover"
+﻿@* FILE: Pages/Discover/Discover.razor *@
+@page "/discover"
+@rendermode InteractiveServer
+@using Microsoft.EntityFrameworkCore
+@using Museek.Domain
+@using Museek.Data
+@inject IDbContextFactory<MuseekContext> DbFactory
 
 <PageTitle>Museek | Discover</PageTitle>
 
-<div class="discover-container">
-    <h1>Discover Music</h1>
-    <p>Explore new artists, genres, and trending music</p>
+<div class="discover-page">
 
-    <div class="discover-sections">
-        <section class="discover-section">
-            <h2>Browse by Genre</h2>
-            <div class="genre-grid">
-                @foreach (var genre in genres)
+    <div class="discover-hero">
+        <div class="hero-left">
+            <div class="hero-title">Discover</div>
+            <div class="hero-sub">Curated playlists grouped by category.</div>
+
+            <div class="hero-search">
+                <img src="images/search.png" class="search-icon" />
+                <input class="search-input"
+                       type="text"
+                       placeholder="Search curated playlists"
+                       @bind="searchText" />
+            </div>
+
+            <div class="chips">
+                <button class="chip @(string.IsNullOrWhiteSpace(selectedCategory) ? "chip-on" : "")"
+                        type="button"
+                        @onclick="@(() => SelectCategory(null))">
+                    All
+                </button>
+
+                @foreach (var c in categories)
                 {
-                    <div class="genre-card">
-                        <h3>@genre</h3>
-                    </div>
+                    <button class="chip @((selectedCategory == c) ? "chip-on" : "")"
+                            type="button"
+                            @onclick="@(() => SelectCategory(c))">
+                        @c
+                    </button>
                 }
             </div>
-        </section>
+        </div>
 
-        <section class="discover-section">
-            <h2>Top Charts</h2>
-            <div class="charts-grid">
-                <!-- Add chart items here -->
-                <p class="empty-message">Charts loading...</p>
-            </div>
-        </section>
+        <div class="hero-right">
+            <div class="hero-card">
+                <div class="hero-card-title">Curated</div>
+                <div class="hero-card-sub">Only public curated playlists are shown here.</div>
 
-        <section class="discover-section">
-            <h2>Recommended For You</h2>
-            <div class="recommendations-grid">
-                <!-- Add recommendations here -->
-                <p class="empty-message">Recommendations loading...</p>
+                <div class="hero-stats">
+                    <div class="stat">
+                        <div class="stat-num">@publicCuratedCount</div>
+                        <div class="stat-label">available</div>
+                    </div>
+                    <div class="stat">
+                        <div class="stat-num">@CurrentFilterLabel</div>
+                        <div class="stat-label">filter</div>
+                    </div>
+                </div>
             </div>
-        </section>
+        </div>
     </div>
+
+    @if (loading)
+    {
+        <div class="empty-message">Loading...</div>
+    }
+    else if (grouped.Count == 0)
+    {
+        <div class="empty-message">No curated playlists yet.</div>
+    }
+    else
+    {
+        @foreach (var group in grouped)
+        {
+            <div class="section">
+                <div class="section-head">
+                    <div class="section-title">@group.Category</div>
+                    <div class="section-sub">@group.Playlists.Count playlist(s)</div>
+                </div>
+
+                <div class="row-scroll">
+                    @foreach (var p in group.Playlists)
+                    {
+                        <a class="playlist-card" href="@($"/playlists/details?id={p.Id}")">
+                            <img class="playlist-img"
+                                 src="@(!string.IsNullOrWhiteSpace(p.Cover_Image) ? p.Cover_Image : "images/default-cover.jpg")" />
+                            <div class="playlist-meta">
+                                <div class="playlist-title">@p.Name</div>
+                                @if (!string.IsNullOrWhiteSpace(p.Description))
+                                {
+                                    <div class="playlist-desc">@p.Description</div>
+                                }
+                            </div>
+                        </a>
+                    }
+                </div>
+            </div>
+        }
+
+    }
+
 </div>
 
 @code {
-    private List<string> genres = new()
+    private bool loading = true;
+
+    private string searchText = "";
+    private string selectedCategory = "";
+
+    private int publicCuratedCount = 0;
+
+    private List<string> categories = new();
+    private List<SectionVm> grouped = new();
+
+    private string CurrentFilterLabel =>
+        string.IsNullOrWhiteSpace(selectedCategory) ? "All" : selectedCategory;
+
+    protected override async Task OnInitializedAsync()
     {
-        "Pop", "Rock", "Hip Hop", "Electronic",
-        "Jazz", "Classical", "R&B", "Country"
-    };
+        using var db = DbFactory.CreateDbContext();
+
+        var all = await db.Playlist
+            .AsNoTracking()
+            .Where(p => p.IsCurated == true && p.IsPublic == true)
+            .OrderByDescending(p => p.DateCreated)
+            .ToListAsync();
+
+        publicCuratedCount = all.Count;
+
+        var normalized = all.Select(p =>
+        {
+            var cat = (p.CuratedCategory ?? "").Trim();
+            if (string.IsNullOrWhiteSpace(cat)) cat = "Curated";
+            return (Playlist: p, Category: cat);
+        }).ToList();
+
+        categories = normalized
+            .Select(x => x.Category)
+            .Distinct(StringComparer.OrdinalIgnoreCase)
+            .OrderBy(x => x)
+            .ToList();
+
+        RebuildGroups(normalized);
+
+        loading = false;
+    }
+
+    private void SelectCategory(string? category)
+    {
+        selectedCategory = category ?? "";
+        _ = RefreshGroupsAsync();
+    }
+
+    private async Task RefreshGroupsAsync()
+    {
+        using var db = DbFactory.CreateDbContext();
+
+        var all = await db.Playlist
+            .AsNoTracking()
+            .Where(p => p.IsCurated == true && p.IsPublic == true)
+            .OrderByDescending(p => p.DateCreated)
+            .ToListAsync();
+
+        publicCuratedCount = all.Count;
+
+        var normalized = all.Select(p =>
+        {
+            var cat = (p.CuratedCategory ?? "").Trim();
+            if (string.IsNullOrWhiteSpace(cat)) cat = "Curated";
+            return (Playlist: p, Category: cat);
+        }).ToList();
+
+        categories = normalized
+            .Select(x => x.Category)
+            .Distinct(StringComparer.OrdinalIgnoreCase)
+            .OrderBy(x => x)
+            .ToList();
+
+        RebuildGroups(normalized);
+
+        StateHasChanged();
+    }
+
+    private void RebuildGroups(List<(Playlist Playlist, string Category)> normalized)
+    {
+        IEnumerable<(Playlist Playlist, string Category)> q = normalized;
+
+        if (!string.IsNullOrWhiteSpace(selectedCategory))
+        {
+            q = q.Where(x => x.Category.Equals(selectedCategory, StringComparison.OrdinalIgnoreCase));
+        }
+
+        if (!string.IsNullOrWhiteSpace(searchText))
+        {
+            var s = searchText.Trim();
+            q = q.Where(x =>
+                (x.Playlist.Name ?? "").Contains(s, StringComparison.OrdinalIgnoreCase)
+                || (x.Playlist.Description ?? "").Contains(s, StringComparison.OrdinalIgnoreCase));
+        }
+
+        grouped = q
+            .GroupBy(x => x.Category, StringComparer.OrdinalIgnoreCase)
+            .OrderBy(g => g.Key)
+            .Select(g => new SectionVm
+            {
+                Category = g.Key,
+                Playlists = g.Select(x => x.Playlist).Take(12).ToList()
+            })
+            .Where(vm => vm.Playlists.Count > 0)
+            .ToList();
+    }
+
+    private sealed class SectionVm
+    {
+        public string Category { get; set; } = "";
+        public List<Playlist> Playlists { get; set; } = new();
+    }
 }

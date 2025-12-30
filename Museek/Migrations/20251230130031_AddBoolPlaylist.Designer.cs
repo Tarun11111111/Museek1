@@ -3,6 +3,7 @@ using System;
 using Microsoft.EntityFrameworkCore;
 using Microsoft.EntityFrameworkCore.Infrastructure;
 using Microsoft.EntityFrameworkCore.Metadata;
+using Microsoft.EntityFrameworkCore.Migrations;
 using Microsoft.EntityFrameworkCore.Storage.ValueConversion;
 using Museek.Data;
 
@@ -11,9 +12,11 @@ using Museek.Data;
 namespace Museek.Migrations
 {
     [DbContext(typeof(MuseekContext))]
-    partial class MuseekContextModelSnapshot : ModelSnapshot
+    [Migration("20251230130031_AddBoolPlaylist")]
+    partial class AddBoolPlaylist
     {
-        protected override void BuildModel(ModelBuilder modelBuilder)
+        /// <inheritdoc />
+        protected override void BuildTargetModel(ModelBuilder modelBuilder)
         {
 #pragma warning disable 612, 618
             modelBuilder
@@ -251,7 +254,7 @@ namespace Museek.Migrations
                         {
                             Id = "3781efa7-66dc-47f0-860f-e506d04102e4",
                             AccessFailedCount = 0,
-                            ConcurrencyStamp = "a84e2ec1-813b-4329-a315-46ab5409a351",
+                            ConcurrencyStamp = "0c89bbbd-44ad-4d01-af62-d6ea0cc4fe65",
                             Email = "admin@localhost.com",
                             EmailConfirmed = true,
                             FirstName = "Admin",
@@ -259,9 +262,9 @@ namespace Museek.Migrations
                             LockoutEnabled = false,
                             NormalizedEmail = "ADMIN@LOCALHOST.COM",
                             NormalizedUserName = "ADMIN@LOCALHOST.COM",
-                            PasswordHash = "AQAAAAIAAYagAAAAEArl6f7cyXbesE+qCFfs92zz6f9a0LCAH1YfhOsqwQweqKUwvqG7himm6EvuljkqWg==",
+                            PasswordHash = "AQAAAAIAAYagAAAAECuf4x1xBAi+q1axmDa8CTv/XhqXg5PDkTe8V9BY5GM8A1qGegBQPj00nhXgWCa0oA==",
                             PhoneNumberConfirmed = false,
-                            SecurityStamp = "035c63d2-96a7-4bca-be27-9bb32faf3fa0",
+                            SecurityStamp = "7aac6d0d-5c86-4ad9-ad33-471ae978772f",
                             TwoFactorEnabled = false,
                             UserName = "admin@localhost.com"
                         });
@@ -353,9 +356,6 @@ namespace Museek.Migrations
                         .HasColumnType("nvarchar(max)");
 
                     b.Property<string>("CreatedBy")
-                        .HasColumnType("nvarchar(max)");
-
-                    b.Property<string>("CuratedCategory")
                         .HasColumnType("nvarchar(max)");
 
                     b.Property<DateTime>("DateCreated")

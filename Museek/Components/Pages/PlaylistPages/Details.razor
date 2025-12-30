@@ -29,6 +29,14 @@ else
                 <div class="meta">
                     <div class="title">@playlist.Name</div>
                     <div class="desc">@playlist.Description</div>
+
+                    @if (isAdmin)
+                    {
+                        <div class="admin-field">
+                            <div class="admin-label">Category</div>
+                            <input class="admin-input" value="@((playlist.CuratedCategory ?? ""))" disabled />
+                        </div>
+                    }
                 </div>
             </div>
 
@@ -37,9 +45,13 @@ else
                 {
                     <a class="btn" href="@($"/playlists/edit?id={playlist.Id}")">Edit</a>
                     <a class="btn danger" href="@($"/playlists/delete?id={playlist.Id}")">Delete</a>
+                    <button class="btn" @onclick="OpenAddSongsModal">+ Add Songs</button>
+                    <a class="btn" href="/userlibrary">Back</a>
                 }
-                <button class="btn" @onclick="OpenAddSongsModal">+ Add Songs</button>
-                <a class="btn" href="/userlibrary">Back</a>
+                else
+                {
+                    <a class="btn" href="/discover">Back</a>
+                }
             </div>
         </div>
 
@@ -47,7 +59,10 @@ else
             <div class="thead">
                 <span>Name</span>
                 <span>Artist</span>
-                <span>Actions</span>
+                @if (canEdit)
+                {
+                    <span>Actions</span>
+                }
             </div>
 
             @if (rows.Count == 0)
@@ -76,9 +91,12 @@ else
 
                         <div class="artist">@r.ArtistName</div>
 
-                        <div class="actions">
-                            <button class="link danger" @onclick="@(() => RemoveSong(r.SongId))">Remove</button>
-                        </div>
+                        @if (canEdit)
+                        {
+                            <div class="actions">
+                                <button class="link danger" @onclick="@(() => RemoveSong(r.SongId))">Remove</button>
+                            </div>
+                        }
                     </div>
                 }
             }
@@ -86,7 +104,7 @@ else
     </div>
 }
 
-@if (showAddSongsModal)
+@if (canEdit && showAddSongsModal)
 {
     <div class="modal-backdrop" @onclick="CloseAddSongsModal">
         <div class="modal-card" @onclick:stopPropagation="true">
@@ -238,6 +256,8 @@ else
     private MuseekContext context = default!;
     private string currentUserId = string.Empty;
 
+    private bool isAdmin = false;
+
     [SupplyParameterFromQuery] private int Id { get; set; }
 
     private Playlist? playlist;
@@ -261,9 +281,8 @@ else
     private string currentTime = "00:00";
     private string remainingTime = "00:00";
 
-    // Rating UI state
     private bool showRatingPopover = false;
-    private int ratingValue = 0; // 1..5
+    private int ratingValue = 0;
     private string ratingComment = "";
     private string ratingError = "";
 
@@ -276,13 +295,10 @@ else
         AudioPath = ""
     };
 
-    // Playback state
     private List<PlayerSong> playbackQueue = new();
     private int currentIndex = -1;
 
     private bool shuffleOn = false;
-
-    // repeatMode: 0 off, 1 repeat all, 2 repeat one
     private int repeatMode = 0;
 
     private readonly Random rng = new();
@@ -316,7 +332,7 @@ else
             return;
         }
 
-        var isAdmin = user.IsInRole("Administrator");
+        isAdmin = user.IsInRole("Administrator");
         canEdit = isAdmin || playlist.UserId == currentUserId;
 
         artists = await context.Artist.ToListAsync();
@@ -389,6 +405,9 @@ else
 
     private void OpenAddSongsModal()
     {
+        if (!canEdit)
+            return;
+
         songSearchText = "";
         showAddSongsModal = true;
     }
@@ -407,6 +426,9 @@ else
 
     private async Task AddSong(int songId)
     {
+        if (!canEdit)
+            return;
+
         if (playlist == null)
             return;
 
@@ -433,6 +455,9 @@ else
 
     private async Task RemoveSong(int songId)
     {
+        if (!canEdit)
+            return;
+
         if (playlist == null)
             return;
 
@@ -482,13 +507,11 @@ else
             AudioPath = s.AudioPath
         };
 
-        // Update like state for this song
         using (var db = DbFactory.CreateDbContext())
         {
             isLiked = await db.UserSong.AnyAsync(us => us.UserId == currentUserId && us.SongId == currentSong.SongId);
         }
 
-        // Close rating UI when switching songs
         showRatingPopover = false;
         ratingError = "";
 
@@ -689,7 +712,6 @@ else
         }
     }
 
-    // Rating UI handlers
     private async Task ToggleRatingPopover()
     {
         if (currentSong.SongId <= 0)
@@ -789,7 +811,6 @@ else
         StateHasChanged();
     }
 
-    // Admin methods for later pages
     private async Task<double> GetAverageRatingForSongAsync(int songId)
     {
         using var db = DbFactory.CreateDbContext();

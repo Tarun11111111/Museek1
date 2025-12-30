@@ -184,7 +184,6 @@
     private string newPlaylistName = "";
     private string newPlaylistDescription = "";
 
-    // playlistId -> set(songIds)
     private Dictionary<int, HashSet<int>> playlistSongMap = new();
 
     protected override async Task OnInitializedAsync()
@@ -302,18 +301,10 @@
                 (p.Name ?? "").Contains(playlistSearchText, StringComparison.OrdinalIgnoreCase)
                 || (p.Description ?? "").Contains(playlistSearchText, StringComparison.OrdinalIgnoreCase));
 
-    private async Task<List<string>> GetAdminUserIds()
-    {
-        var admins = await UserManager.GetUsersInRoleAsync("Administrator");
-        return admins.Select(a => a.Id).ToList();
-    }
-
     private async Task LoadAccessiblePlaylists()
     {
-        var adminIds = await GetAdminUserIds();
-
         accessiblePlaylists = await context.Playlist
-            .Where(p => p.UserId == currentUserId || adminIds.Contains(p.UserId))
+            .Where(p => p.UserId == currentUserId && p.IsCurated == false)
             .OrderByDescending(p => p.DateCreated)
             .ToListAsync();
     }
@@ -398,6 +389,8 @@
             Description = string.IsNullOrWhiteSpace(newPlaylistDescription) ? null : newPlaylistDescription.Trim(),
             Cover_Image = null,
             UserId = currentUserId,
+            IsCurated = false,
+            IsPublic = false,
             DateCreated = DateTime.Now,
             DateUpdated = DateTime.Now,
             CreatedBy = currentUserId,

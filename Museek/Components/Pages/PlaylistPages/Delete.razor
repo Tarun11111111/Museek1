@@ -46,6 +46,14 @@ else
                         <div class="desc muted">No description</div>
                     }
 
+                    @if (isAdmin)
+                    {
+                        <div class="admin-field">
+                            <div class="admin-label">Category</div>
+                            <input class="admin-input" value="@((playlist.CuratedCategory ?? ""))" disabled />
+                        </div>
+                    }
+
                     <div class="stats">
                         <div class="stat">
                             <div class="stat-num">@songCount</div>
@@ -78,6 +86,8 @@ else
     private MuseekContext context = default!;
     private string currentUserId = string.Empty;
 
+    private bool isAdmin = false;
+
     [SupplyParameterFromQuery] private int Id { get; set; }
 
     private Playlist? playlist;
@@ -95,6 +105,8 @@ else
 
         var authState = await AuthenticationStateProvider.GetAuthenticationStateAsync();
         var user = authState.User;
+
+        isAdmin = user.IsInRole("Administrator");
 
         currentUserId =
             user.FindFirst(ClaimTypes.NameIdentifier)?.Value
@@ -114,7 +126,6 @@ else
             return;
         }
 
-        var isAdmin = user.IsInRole("Administrator");
         var canDelete = isAdmin || playlist.UserId == currentUserId;
         if (!canDelete)
         {
