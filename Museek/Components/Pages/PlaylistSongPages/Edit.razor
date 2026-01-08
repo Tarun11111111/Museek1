@@ -20,7 +20,7 @@ else
         <div class="col-md-4">
             <EditForm method="post" Model="PlaylistSong" OnValidSubmit="UpdatePlaylistSong" FormName="edit" Enhance>
                 <DataAnnotationsValidator />
-                <ValidationSummary role="alert"/>
+                <ValidationSummary role="alert" />
                 <input type="hidden" name="PlaylistSong.Id" value="@PlaylistSong.Id" />
                 <div class="mb-3">
                     <label for="songid" class="form-label">SongId:</label>

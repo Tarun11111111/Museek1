@@ -14,37 +14,37 @@
     <div class="col-md-4">
         <EditForm method="post" Model="PlaylistSong" OnValidSubmit="AddPlaylistSong" FormName="create" Enhance>
             <DataAnnotationsValidator />
-            <ValidationSummary class="text-danger" role="alert"/>
+            <ValidationSummary class="text-danger" role="alert" />
             <div class="mb-3">
-                <label for="songid" class="form-label">SongId:</label> 
-                <InputNumber id="songid" @bind-Value="PlaylistSong.SongId" class="form-control" /> 
-                <ValidationMessage For="() => PlaylistSong.SongId" class="text-danger" /> 
-            </div>        
+                <label for="songid" class="form-label">SongId:</label>
+                <InputNumber id="songid" @bind-Value="PlaylistSong.SongId" class="form-control" />
+                <ValidationMessage For="() => PlaylistSong.SongId" class="text-danger" />
+            </div>
             <div class="mb-3">
-                <label for="playlistid" class="form-label">PlaylistId:</label> 
-                <InputNumber id="playlistid" @bind-Value="PlaylistSong.PlaylistId" class="form-control" /> 
-                <ValidationMessage For="() => PlaylistSong.PlaylistId" class="text-danger" /> 
-            </div>        
+                <label for="playlistid" class="form-label">PlaylistId:</label>
+                <InputNumber id="playlistid" @bind-Value="PlaylistSong.PlaylistId" class="form-control" />
+                <ValidationMessage For="() => PlaylistSong.PlaylistId" class="text-danger" />
+            </div>
             <div class="mb-3">
-                <label for="datecreated" class="form-label">DateCreated:</label> 
-                <InputDate id="datecreated" @bind-Value="PlaylistSong.DateCreated" class="form-control" /> 
-                <ValidationMessage For="() => PlaylistSong.DateCreated" class="text-danger" /> 
-            </div>        
+                <label for="datecreated" class="form-label">DateCreated:</label>
+                <InputDate id="datecreated" @bind-Value="PlaylistSong.DateCreated" class="form-control" />
+                <ValidationMessage For="() => PlaylistSong.DateCreated" class="text-danger" />
+            </div>
             <div class="mb-3">
-                <label for="dateupdated" class="form-label">DateUpdated:</label> 
-                <InputDate id="dateupdated" @bind-Value="PlaylistSong.DateUpdated" class="form-control" /> 
-                <ValidationMessage For="() => PlaylistSong.DateUpdated" class="text-danger" /> 
-            </div>        
+                <label for="dateupdated" class="form-label">DateUpdated:</label>
+                <InputDate id="dateupdated" @bind-Value="PlaylistSong.DateUpdated" class="form-control" />
+                <ValidationMessage For="() => PlaylistSong.DateUpdated" class="text-danger" />
+            </div>
             <div class="mb-3">
-                <label for="createdby" class="form-label">CreatedBy:</label> 
-                <InputText id="createdby" @bind-Value="PlaylistSong.CreatedBy" class="form-control" /> 
-                <ValidationMessage For="() => PlaylistSong.CreatedBy" class="text-danger" /> 
-            </div>        
+                <label for="createdby" class="form-label">CreatedBy:</label>
+                <InputText id="createdby" @bind-Value="PlaylistSong.CreatedBy" class="form-control" />
+                <ValidationMessage For="() => PlaylistSong.CreatedBy" class="text-danger" />
+            </div>
             <div class="mb-3">
-                <label for="updatedby" class="form-label">UpdatedBy:</label> 
-                <InputText id="updatedby" @bind-Value="PlaylistSong.UpdatedBy" class="form-control" /> 
-                <ValidationMessage For="() => PlaylistSong.UpdatedBy" class="text-danger" /> 
-            </div>        
+                <label for="updatedby" class="form-label">UpdatedBy:</label>
+                <InputText id="updatedby" @bind-Value="PlaylistSong.UpdatedBy" class="form-control" />
+                <ValidationMessage For="() => PlaylistSong.UpdatedBy" class="text-danger" />
+            </div>
             <button type="submit" class="btn btn-primary">Create</button>
         </EditForm>
     </div>

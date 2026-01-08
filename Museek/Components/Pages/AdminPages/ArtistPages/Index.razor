@@ -1,9 +1,11 @@
 ﻿@page "/artists"
 @using Microsoft.EntityFrameworkCore
+@using System.Security.Claims
 @using Museek.Domain
 @using Museek.Data
 @implements IAsyncDisposable
 @inject IDbContextFactory<MuseekContext> DbFactory
+@inject AuthenticationStateProvider AuthenticationStateProvider
 
 <PageTitle>Artists</PageTitle>
 
@@ -23,42 +25,69 @@
             <input type="text" placeholder="Search artists" @bind="searchText" />
         </div>
 
-        <a href="artists/create" class="upload-btn">+ Create artist</a>
-    </div>
-
-    <!-- Table -->
-    <div class="song-table">
-
-        <div class="table-header">
-            <span class="col-title name-col">Name</span>
-            <span class="col-title small-col">Country</span>
-            <span class="col-title small-col">Actions</span>
-        </div>
-
-        @foreach (var a in FilteredArtists)
+        @if (isAdmin)
         {
-            <div class="song-row">
-
-                <!-- Artist Info -->
-                <div class="song-main">
-                    <img src="@a.Profile_Pic" class="song-img" />
-                    <div class="song-meta" >
-                        <span class="song-name">@a.Name </span>
-
-                    </div>
-                </div>
-
-                <div class="song-stat">@a.Country</div>
-
-                <div class="song-actions">
-                    <a href="@($"artists/edit?id={a.Id}")">Edit</a> |
-                    <a href="@($"artists/details?id={a.Id}")">Details</a> |
-                    <a href="@($"artists/delete?id={a.Id}")">Delete</a>
-                </div>
-
-            </div>
+            <a href="artists/create" class="upload-btn">+ Create artist</a>
         }
     </div>
+
+    @if (!isAdmin)
+    {
+        <!-- User view: cleaner grid -->
+        <div class="artist-grid-view">
+            @foreach (var a in FilteredArtists)
+            {
+                <a class="artist-card" href="@($"/albums?artistId={a.Id}")">
+                    <img src="@a.Profile_Pic" class="artist-card-img" />
+                    <div class="artist-card-meta">
+                        <div class="artist-card-name">@a.Name</div>
+                        @if (!string.IsNullOrWhiteSpace(a.Country))
+                        {
+                            <div class="artist-card-country">@a.Country</div>
+                        }
+                    </div>
+                </a>
+            }
+        </div>
+    }
+    else
+    {
+        <!-- Admin view: keep your table UI -->
+        <div class="song-table">
+
+            <div class="table-header">
+                <span class="col-title name-col">Name</span>
+                <span class="col-title small-col">Country</span>
+                <span class="col-title small-col">Actions</span>
+            </div>
+
+            @foreach (var a in FilteredArtists)
+            {
+                <div class="song-row">
+
+                    <!-- Artist Info -->
+                    <div class="song-main">
+                        <a href="@($"/albums?artistId={a.Id}")">
+                            <img src="@a.Profile_Pic" class="song-img" />
+                        </a>
+                        <div class="song-meta">
+                            <span class="song-name">@a.Name </span>
+
+                        </div>
+                    </div>
+
+                    <div class="song-stat">@a.Country</div>
+
+                    <div class="song-actions">
+                        <a href="@($"artists/edit?id={a.Id}")">Edit</a> |
+                        <a href="@($"artists/details?id={a.Id}")">Details</a> |
+                        <a href="@($"artists/delete?id={a.Id}")">Delete</a>
+                    </div>
+
+                </div>
+            }
+        </div>
+    }
 
 </div>
 
@@ -68,10 +97,17 @@
 
     private string searchText = "";
 
-    protected override void OnInitialized()
+    private bool isAdmin = false;
+
+    protected override async Task OnInitializedAsync()
     {
         context = DbFactory.CreateDbContext();
         artists = context.Artist.ToList();
+
+        var authState = await AuthenticationStateProvider.GetAuthenticationStateAsync();
+        var user = authState.User;
+
+        isAdmin = user.IsInRole("Administrator");
     }
 
     private IEnumerable<Artist> FilteredArtists =>

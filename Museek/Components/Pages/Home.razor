@@ -1,6 +1,7 @@
 ﻿@page "/home"
 @rendermode InteractiveServer
 @using Microsoft.AspNetCore.Components.Web
+@using Microsoft.JSInterop
 @inject IJSRuntime JSRuntime
 
 <PageTitle>Museek | Home</PageTitle>
@@ -19,42 +20,54 @@
     <main class="left-content">
         <section class="music-section">
             <h2>Popular Songs</h2>
-            <div class="music-grid">
-                @foreach (var song in popularSongs)
-                {
-                    <div class="music-card" @onclick="@(() => PlaySong(song))">
-                        <img src="@song.Image" alt="@song.Title">
-                        <h4>@song.Title</h4>
-                        <p>@song.Artist</p>
-                    </div>
-                }
+
+            <!-- Same cards, now horizontally scrollable -->
+            <div class="row-scroll">
+                <div class="music-grid">
+                    @foreach (var song in popularSongs)
+                    {
+                        <div class="music-card" @onclick="@(() => PlaySong(song))">
+                            <img src="@song.Image" alt="@song.Title">
+                            <h4>@song.Title</h4>
+                            <p>@song.Artist</p>
+                        </div>
+                    }
+                </div>
             </div>
         </section>
 
         <section class="music-section">
             <h2>Trending Artists</h2>
-            <div class="artist-grid">
-                @foreach (var artist in trendingArtists)
-                {
-                    <div class="artist-card">
-                        <img src="@artist.Image" alt="@artist.Name">
-                        <h4>@artist.Name</h4>
-                    </div>
-                }
+
+            <!-- Same cards, now horizontally scrollable -->
+            <div class="row-scroll">
+                <div class="artist-grid">
+                    @foreach (var artist in trendingArtists)
+                    {
+                        <div class="artist-card">
+                            <img src="@artist.Image" alt="@artist.Name">
+                            <h4>@artist.Name</h4>
+                        </div>
+                    }
+                </div>
             </div>
         </section>
 
         <section class="music-section">
             <h2>New Releases</h2>
-            <div class="music-grid">
-                @foreach (var release in newReleases)
-                {
-                    <div class="music-card" @onclick="@(() => PlaySong(release))">
-                        <img src="@release.Image" alt="@release.Title">
-                        <h4>@release.Title</h4>
-                        <p>@release.Artist</p>
-                    </div>
-                }
+
+            <!-- Same cards, now horizontally scrollable -->
+            <div class="row-scroll">
+                <div class="music-grid">
+                    @foreach (var release in newReleases)
+                    {
+                        <div class="music-card" @onclick="@(() => PlaySong(release))">
+                            <img src="@release.Image" alt="@release.Title">
+                            <h4>@release.Title</h4>
+                            <p>@release.Artist</p>
+                        </div>
+                    }
+                </div>
             </div>
         </section>
     </main>
@@ -72,59 +85,63 @@
             </div>
         </section>
 
-        <!-- Music Player Section -->
-        <section class="player-box">
-            <div class="player-left">
-                <img id="songCover" src="@currentSong.Image" alt="Cover" />
-                <div class="song-info">
-                    <h4 id="songTitle">@currentSong.Title</h4>
-                    <p id="songArtist">@currentSong.Artist</p>
+        <!-- Music Player Section (only show when a song is clicked) -->
+        @if (showPlayer)
+        {
+            <section class="player-box">
+                <button class="close-button" type="button" @onclick="ClosePlayer">×</button>
+
+                <div class="player-left">
+                    <img id="songCover" src="@currentSong.Image" alt="Cover" />
+                    <div class="song-info">
+                        <h4 id="songTitle">@currentSong.Title</h4>
+                        <p id="songArtist">@currentSong.Artist</p>
+                    </div>
                 </div>
-                <img src="@(isLiked ? "images/heartAfter.png" : "images/heartBefore.png")"
-                     alt="like"
-                     class="icon-btn"
-                     @onclick="@ToggleLike" />
-            </div>
 
-            <div class="player-controls">
-                <input type="range" id="progressBar" min="0" max="100" value="@progress" @oninput="@SeekAudio" />
-                <div class="control-buttons">
-                    <img src="images/shuffleButton.png" alt="Shuffle" class="control-icon" @onclick="@ToggleShuffle" />
-                    <img src="images/prevButton.png" alt="Previous" class="control-icon" @onclick="@PreviousSong" />
-                    <img src="@(isPlaying ? "images/pauseButton.png" : "images/playButton.png")"
-                         id="playPause"
-                         alt="Play"
-                         class="control-icon main"
-                         @onclick="@TogglePlayPause" />
-                    <img src="images/nextButton.png" alt="Next" class="control-icon" @onclick="@NextSong" />
-                    <img src="images/repeatButton.png" alt="Repeat" class="control-icon" @onclick="@ToggleRepeat" />
+                <div class="player-controls">
+                    <input type="range" id="progressBar" min="0" max="100" value="@progress" @oninput="@SeekAudio" />
+                    <div class="control-buttons">
+                        <img src="@(shuffleOn ? "images/shuffle.png" : "images/shuffleButton.png")"
+                             alt="Shuffle"
+                             class="control-icon"
+                             @onclick="@ToggleShuffle" />
+                        <img src="images/prevButton.png" alt="Previous" class="control-icon" @onclick="@PreviousSong" />
+                        <img src="@(isPlaying ? "images/pauseButton.png" : "images/playButton.png")"
+                             id="playPause"
+                             alt="Play"
+                             class="control-icon main"
+                             @onclick="@TogglePlayPause" />
+                        <img src="images/nextButton.png" alt="Next" class="control-icon" @onclick="@NextSong" />
+                        <img src="@GetRepeatIcon()" alt="Repeat" class="control-icon" @onclick="@ToggleRepeat" />
+                    </div>
+                    <div class="time-display">
+                        <span id="currentTime">@currentTime</span>
+                        <span id="remainingTime">-@remainingTime</span>
+                    </div>
                 </div>
-                <div class="time-display">
-                    <span id="currentTime">@currentTime</span>
-                    <span id="remainingTime">-@remainingTime</span>
+
+                <div class="volume-control">
+                    <img src="images/volume.png" alt="Volume" class="control-icon" />
+                    <input type="range" id="volumeBar" min="0" max="100" value="@volume" @oninput="@ChangeVolume" />
                 </div>
-            </div>
 
-            <div class="volume-control">
-                <img src="images/volume.png" alt="Volume" class="control-icon" />
-                <input type="range" id="volumeBar" min="0" max="100" value="@volume" @oninput="@ChangeVolume" />
-            </div>
-
-            <!-- Hidden audio element -->
-            <audio id="audioPlayer" src="@GetEncodedAudioPath(currentSong.AudioPath)"></audio>
-
-        </section>
+                <!-- Hidden audio element -->
+                <audio id="audioPlayer" src="@GetEncodedAudioPath(currentSong.AudioPath)"></audio>
+            </section>
+        }
     </aside>
 </div>
 
 @code {
     private string searchQuery = "";
     private bool isPlaying = false;
-    private bool isLiked = false;
     private double progress = 0;
     private double volume = 70;
     private string currentTime = "00:00";
     private string remainingTime = "00:00";
+
+    private bool showPlayer = false;
 
     // Sample data
     private List<Song> popularSongs = new()
@@ -133,20 +150,25 @@
 
         new Song { Title = "We Can't Be Friends", Artist = "Ariana Grande", Image = "images/ariana.png", AudioPath = "audios/ariana_friends.mp3" },
         new Song { Title = "Baby", Artist = "Justin Bieber", Image = "images/baby.png", AudioPath = "audios/baby.mp3" },
-        //new Song { Title = "Blue", Artist = "Yung Kai", Image = "images/blue.png", AudioPath = "audios/blue.mp3" }
+        new Song { Title = "Officially Christmas", Artist = "Dan + Shay", Image = "Artist Profile Images/Dan+Shay.jpg", AudioPath = "audios/Dan + Shay - Officially Christmas (Official Audio).mp3" },
+        new Song { Title = "Blue", Artist = "Yung Kai", Image = "images/blue.png", AudioPath = "audios/blue.mp3" }
     };
 
     private List<Artist> trendingArtists = new()
     {
         new Artist { Name = "The Weekend", Image = "images/The Weekend.png" },
         new Artist { Name = "Lana Del Rey", Image = "images/Lana Del Rey.png" },
-        new Artist { Name = "Billie Eilish", Image = "images/Billie Eilish.png" }
+        new Artist { Name = "Billie Eilish", Image = "images/Billie Eilish.png" },
+        new Artist { Name = "Mariah Carey", Image = "Artist Profile Images/Mariah Carey.jpg" },
+        new Artist { Name = "Justin Bieber", Image = "Artist Profile Images/Justin Bieber.jpg" }
     };
 
     private List<Song> newReleases = new()
     {
         new Song { Title = "Dusk Till Dawn", Artist = "ZAYN", Image = "images/Dusk Till Dawn.png", AudioPath = "audios/Dusk Till Dawn.mp3" },
         new Song { Title = "Robbers", Artist = "The 1975", Image = "images/Robbers.png", AudioPath = "audios/Robbers.mp3" },
+        new Song { Title = "Mistletoe", Artist = "Justin Bieber", Image = "images/Mistletoe.jpg", AudioPath = "audios/Justin Bieber - Mistletoe (Official Music Video).mp3" },
+        new Song { Title = "Jungle Bell Rock", Artist = "Bobby Helms", Image = "images/JingleBellRock.jpg", AudioPath = "audios/Bobby Helms - Jingle Bell Rock (Lyrics).mp3" },
         new Song { Title = "Give Me Your Forever", Artist = "Zack Tabudlo", Image = "images/GMYF.png", AudioPath = "audios/Give Me Your Forever.mp3" }
     };
 
@@ -155,8 +177,20 @@
         Title = "",
         Artist = "",
         Image = "",
-        AudioPath = ""   // must be empty!
+        AudioPath = ""
     };
+
+    private List<Song> playbackQueue = new();
+    private int currentIndex = -1;
+
+    private bool shuffleOn = false;
+    private int repeatMode = 0;
+
+    private readonly Random rng = new();
+    private Stack<int> shuffleHistory = new();
+
+    private DotNetObjectReference<object>? dotNetRef;
+    private bool jsWired = false;
 
     protected override async Task OnAfterRenderAsync(bool firstRender)
     {
@@ -166,21 +200,56 @@
         }
     }
 
+    private async Task EnsureEndedWiredAndRepeatApplied()
+    {
+        if (!jsWired || dotNetRef == null)
+            return;
+
+        await JSRuntime.InvokeVoidAsync("museekPlayer.wireEnded", dotNetRef);
+        await JSRuntime.InvokeVoidAsync("museekPlayer.setLoop", repeatMode == 2);
+    }
+
     private async Task TogglePlayPause()
     {
+        if (!showPlayer)
+            return;
+
         isPlaying = !isPlaying;
         await JSRuntime.InvokeVoidAsync("togglePlayPause");
     }
 
-    private void ToggleLike()
-    {
-        isLiked = !isLiked;
-    }
-
     private async Task PlaySong(Song song)
     {
-        currentSong = song;
-        isPlaying = true;
+        playbackQueue = popularSongs.Concat(newReleases).ToList();
+
+        currentIndex = playbackQueue.FindIndex(s =>
+            string.Equals(s.AudioPath, song.AudioPath, StringComparison.OrdinalIgnoreCase));
+
+        if (currentIndex < 0)
+            currentIndex = 0;
+
+        shuffleHistory.Clear();
+
+        await PlayIndex(currentIndex, forcePlay: true);
+    }
+
+    private async Task PlayIndex(int index, bool forcePlay)
+    {
+        if (index < 0 || index >= playbackQueue.Count)
+            return;
+
+        currentIndex = index;
+
+        var s = playbackQueue[currentIndex];
+        currentSong = new Song
+        {
+            Title = s.Title,
+            Artist = s.Artist,
+            Image = s.Image,
+            AudioPath = s.AudioPath
+        };
+
+        showPlayer = true;
 
         StateHasChanged();
 
@@ -188,25 +257,116 @@
 
         await JSRuntime.InvokeVoidAsync("initializeAudioPlayer");
 
-        var encodedPath = GetEncodedAudioPath(song.AudioPath);
+        dotNetRef ??= DotNetObjectReference.Create<object>(this);
+        jsWired = true;
+
+        await EnsureEndedWiredAndRepeatApplied();
+
+        var encodedPath = GetEncodedAudioPath(currentSong.AudioPath);
 
         await JSRuntime.InvokeVoidAsync("loadAudio", encodedPath);
 
-        await JSRuntime.InvokeVoidAsync("togglePlayPause");
+        if (!isPlaying || forcePlay)
+        {
+            isPlaying = true;
+            await JSRuntime.InvokeVoidAsync("togglePlayPause");
+        }
+    }
+
+    private async Task ClosePlayer()
+    {
+        if (!showPlayer)
+            return;
+
+        if (isPlaying)
+        {
+            await JSRuntime.InvokeVoidAsync("togglePlayPause");
+        }
+
+        await JSRuntime.InvokeVoidAsync("loadAudio", "");
+
+        isPlaying = false;
+        showPlayer = false;
+
+        currentSong = new Song
+        {
+            Title = "",
+            Artist = "",
+            Image = "",
+            AudioPath = ""
+        };
+
+        progress = 0;
+        currentTime = "00:00";
+        remainingTime = "00:00";
+
+        currentIndex = -1;
+        shuffleHistory.Clear();
+
+        StateHasChanged();
     }
 
     private async Task PreviousSong()
     {
-        await JSRuntime.InvokeVoidAsync("previousSong");
+        if (!showPlayer || playbackQueue.Count == 0 || currentIndex < 0)
+            return;
+
+        if (shuffleOn)
+        {
+            if (shuffleHistory.Count > 0)
+            {
+                var prev = shuffleHistory.Pop();
+                await PlayIndex(prev, forcePlay: true);
+                return;
+            }
+        }
+
+        var nextIndex = currentIndex - 1;
+        if (nextIndex < 0)
+            nextIndex = playbackQueue.Count - 1;
+
+        await PlayIndex(nextIndex, forcePlay: true);
     }
 
     private async Task NextSong()
     {
-        await JSRuntime.InvokeVoidAsync("nextSong");
+        if (!showPlayer || playbackQueue.Count == 0 || currentIndex < 0)
+            return;
+
+        int nextIndex;
+
+        if (shuffleOn)
+        {
+            shuffleHistory.Push(currentIndex);
+
+            if (playbackQueue.Count == 1)
+            {
+                nextIndex = currentIndex;
+            }
+            else
+            {
+                do
+                {
+                    nextIndex = rng.Next(0, playbackQueue.Count);
+                }
+                while (nextIndex == currentIndex);
+            }
+        }
+        else
+        {
+            nextIndex = currentIndex + 1;
+            if (nextIndex >= playbackQueue.Count)
+                nextIndex = 0;
+        }
+
+        await PlayIndex(nextIndex, forcePlay: true);
     }
 
     private async Task SeekAudio(ChangeEventArgs e)
     {
+        if (!showPlayer)
+            return;
+
         if (double.TryParse(e.Value?.ToString(), out double value))
         {
             progress = value;
@@ -216,6 +376,9 @@
 
     private async Task ChangeVolume(ChangeEventArgs e)
     {
+        if (!showPlayer)
+            return;
+
         if (double.TryParse(e.Value?.ToString(), out double value))
         {
             volume = value;
@@ -225,12 +388,33 @@
 
     private void ToggleShuffle()
     {
-        // Implement shuffle logic
+        if (!showPlayer)
+            return;
+
+        shuffleOn = !shuffleOn;
+        shuffleHistory.Clear();
     }
 
-    private void ToggleRepeat()
+    private async Task ToggleRepeat()
     {
-        // Implement repeat logic
+        if (!showPlayer)
+            return;
+
+        repeatMode++;
+        if (repeatMode > 2)
+            repeatMode = 0;
+
+        if (jsWired)
+        {
+            await JSRuntime.InvokeVoidAsync("museekPlayer.setLoop", repeatMode == 2);
+        }
+    }
+
+    private string GetRepeatIcon()
+    {
+        if (repeatMode == 1) return "images/repeat.png";
+        if (repeatMode == 2) return "images/repeat1.png";
+        return "images/repeatOff.png";
     }
 
     private void HandleSearch(KeyboardEventArgs e)
@@ -247,14 +431,49 @@
             return "";
 
         var parts = path.Split('/', StringSplitOptions.RemoveEmptyEntries);
-
-        // Encode each segment so spaces, apostrophes, parentheses, etc. work in URLs
         var encodedParts = parts.Select(p => Uri.EscapeDataString(p));
-
         return string.Join("/", encodedParts);
     }
 
-    // Models
+    [JSInvokable]
+    public async Task OnAudioEnded()
+    {
+        if (!showPlayer)
+            return;
+
+        if (repeatMode == 2)
+        {
+            await JSRuntime.InvokeVoidAsync("museekPlayer.restart");
+            isPlaying = true;
+            return;
+        }
+
+        if (playbackQueue.Count == 0 || currentIndex < 0)
+            return;
+
+        if (shuffleOn)
+        {
+            await NextSong();
+            return;
+        }
+
+        var nextIndex = currentIndex + 1;
+        if (nextIndex >= playbackQueue.Count)
+        {
+            if (repeatMode == 1)
+            {
+                nextIndex = 0;
+            }
+            else
+            {
+                await ClosePlayer();
+                return;
+            }
+        }
+
+        await PlayIndex(nextIndex, forcePlay: true);
+    }
+
     public class Song
     {
         public string Title { get; set; } = "";
@@ -268,4 +487,48 @@
         public string Name { get; set; } = "";
         public string Image { get; set; } = "";
     }
+
+    public async ValueTask DisposeAsync()
+    {
+        if (dotNetRef != null)
+        {
+            dotNetRef.Dispose();
+        }
+    }
 }
+
+<script>
+    window.museekPlayer = window.museekPlayer || {
+        wireEnded: function (dotNetRef) {
+            try {
+                const audio = document.getElementById("audioPlayer");
+                if (!audio) return;
+
+                if (audio._museekEndedHandler) {
+                    audio.removeEventListener("ended", audio._museekEndedHandler);
+                }
+
+                audio._museekEndedHandler = function () {
+                    dotNetRef.invokeMethodAsync("OnAudioEnded");
+                };
+
+                audio.addEventListener("ended", audio._museekEndedHandler);
+            } catch { }
+        },
+        setLoop: function (on) {
+            try {
+                const audio = document.getElementById("audioPlayer");
+                if (!audio) return;
+                audio.loop = !!on;
+            } catch { }
+        },
+        restart: function () {
+            try {
+                const audio = document.getElementById("audioPlayer");
+                if (!audio) return;
+                audio.currentTime = 0;
+                audio.play();
+            } catch { }
+        }
+    };
+</script>

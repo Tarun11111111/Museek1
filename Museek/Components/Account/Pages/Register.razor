@@ -158,23 +158,25 @@
         background-attachment: scroll;
         display: flex;
         justify-content: center;
-        align-items: flex-start;
-        padding-top: 5px;
+        align-items: center;
+        padding: 28px 16px;
+        box-sizing: border-box;
     }
 
-    /* SMALLER FORM SO EVERYTHING FITS */
+    /* BIGGER + RESPONSIVE FORM */
     .form-container {
-        width: 430px; /* reduced from 460px */
-        padding: 15px 20px 25px 20px;
+        width: min(520px, 94vw);
+        padding: 22px 24px 28px 24px;
         background: rgba(0, 0, 0, 0.55);
         backdrop-filter: blur(6px);
         border-radius: 16px;
         border: 1px solid rgba(255,255,255,0.12);
         color: white;
+        box-sizing: border-box;
     }
 
     .title {
-        font-size: 28px; /* smaller title */
+        font-size: 30px;
         font-weight: 700;
         margin-bottom: 14px;
         line-height: 1.2;

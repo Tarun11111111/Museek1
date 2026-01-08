@@ -1,124 +1,221 @@
 ﻿@page "/albums/edit"
+@rendermode InteractiveServer
 @using Microsoft.EntityFrameworkCore
+@using Microsoft.AspNetCore.Components.Forms
+@using System.Security.Claims
 @using Museek.Domain
-@inject IDbContextFactory<Museek.Data.MuseekContext> DbFactory
+@using Museek.Data
+@inject IDbContextFactory<MuseekContext> DbFactory
 @inject NavigationManager NavigationManager
+@inject AuthenticationStateProvider AuthenticationStateProvider
+@attribute [Authorize(Roles = "Administrator")]
 
-<PageTitle>Edit</PageTitle>
+<PageTitle>Edit Album</PageTitle>
 
-<h1>Edit</h1>
-
-<h2>Album</h2>
-<hr />
-@if (Album is null)
+@if (Album == null)
 {
-    <p><em>Loading...</em></p>
+    <div class="form-page">
+        <p><em>Loading...</em></p>
+    </div>
 }
 else
 {
-    <div class="row">
-        <div class="col-md-4">
-            <EditForm method="post" Model="Album" OnValidSubmit="UpdateAlbum" FormName="edit" Enhance>
-                <DataAnnotationsValidator />
-                <ValidationSummary role="alert"/>
-                <input type="hidden" name="Album.Id" value="@Album.Id" />
-                <div class="mb-3">
-                    <label for="title" class="form-label">Title:</label>
-                    <InputText id="title" @bind-Value="Album.Title" class="form-control" />
-                    <ValidationMessage For="() => Album.Title" class="text-danger" />
+    <div class="form-page">
+        <h1 class="page-title">Edit Album</h1>
+
+        <EditForm Model="Album" OnValidSubmit="UpdateAlbum">
+            <DataAnnotationsValidator />
+            <ValidationSummary class="text-danger" />
+
+            <div class="field">
+                <label>Title</label>
+                <InputText class="input" @bind-Value="Album.Title" />
+            </div>
+
+            <div class="field">
+                <label>Released Date</label>
+                <InputDate class="input" @bind-Value="Album.ReleasedDate" />
+            </div>
+
+            <div class="field">
+                <label>Description</label>
+                <InputTextArea class="input textarea" @bind-Value="Album.Description" />
+            </div>
+
+            <div class="field">
+                <label>Artist</label>
+                <select class="input" @bind="Album.ArtistId">
+                    @foreach (var a in artists)
+                    {
+                        <option value="@a.Id">@a.Name</option>
+                    }
+                </select>
+            </div>
+
+            <div class="field">
+                <label>Cover Image</label>
+
+                <div class="cover-card">
+                    <div class="cover-thumb-wrap">
+                        <img class="cover-thumb" src="@CoverPreviewSrc" alt="Cover preview" />
+                    </div>
+
+                    <div class="cover-right">
+                        <InputFile OnChange="OnCoverSelected" accept="image/*" />
+                        <div class="hint">PNG, JPG, WEBP. Max 5 MB.</div>
+
+                        @if (!string.IsNullOrWhiteSpace(uploadError))
+                        {
+                            <div class="error">@uploadError</div>
+                        }
+                    </div>
                 </div>
-                <div class="mb-3">
-                    <label for="released_year" class="form-label">Released_Year:</label>
-                    <InputText id="released_year" @bind-Value="Album.Released_Year" class="form-control" />
-                    <ValidationMessage For="() => Album.Released_Year" class="text-danger" />
-                </div>
-                <div class="mb-3">
-                    <label for="cover_image" class="form-label">Cover_Image:</label>
-                    <InputText id="cover_image" @bind-Value="Album.Cover_Image" class="form-control" />
-                    <ValidationMessage For="() => Album.Cover_Image" class="text-danger" />
-                </div>
-                <div class="mb-3">
-                    <label for="artistid" class="form-label">ArtistId:</label>
-                    <InputNumber id="artistid" @bind-Value="Album.ArtistId" class="form-control" />
-                    <ValidationMessage For="() => Album.ArtistId" class="text-danger" />
-                </div>
-                <div class="mb-3">
-                    <label for="datecreated" class="form-label">DateCreated:</label>
-                    <InputDate id="datecreated" @bind-Value="Album.DateCreated" class="form-control" />
-                    <ValidationMessage For="() => Album.DateCreated" class="text-danger" />
-                </div>
-                <div class="mb-3">
-                    <label for="dateupdated" class="form-label">DateUpdated:</label>
-                    <InputDate id="dateupdated" @bind-Value="Album.DateUpdated" class="form-control" />
-                    <ValidationMessage For="() => Album.DateUpdated" class="text-danger" />
-                </div>
-                <div class="mb-3">
-                    <label for="createdby" class="form-label">CreatedBy:</label>
-                    <InputText id="createdby" @bind-Value="Album.CreatedBy" class="form-control" />
-                    <ValidationMessage For="() => Album.CreatedBy" class="text-danger" />
-                </div>
-                <div class="mb-3">
-                    <label for="updatedby" class="form-label">UpdatedBy:</label>
-                    <InputText id="updatedby" @bind-Value="Album.UpdatedBy" class="form-control" />
-                    <ValidationMessage For="() => Album.UpdatedBy" class="text-danger" />
-                </div>
-                <button type="submit" class="btn btn-primary">Save</button>
-            </EditForm>
-        </div>
+            </div>
+
+            <div class="actions">
+                <button class="primary" type="submit">Save</button>
+                <a class="secondary" href="@($"/albums/details?id={Album.Id}")">Cancel</a>
+            </div>
+        </EditForm>
     </div>
 }
 
-<div>
-    <a href="/albums">Back to List</a>
-</div>
-
 @code {
-    [SupplyParameterFromQuery]
-    private int Id { get; set; }
+    [SupplyParameterFromQuery] private int Id { get; set; }
 
-    [SupplyParameterFromForm]
-    private Album? Album { get; set; }
+    private Album? Album;
+    private List<Artist> artists = new();
+
+    private IBrowserFile? selectedCoverFile;
+    private string? coverDataUrl;
+    private string uploadError = "";
+
+    private string CoverPreviewSrc =>
+        !string.IsNullOrWhiteSpace(coverDataUrl) ? coverDataUrl :
+        !string.IsNullOrWhiteSpace(Album?.Cover_Image) ? Album!.Cover_Image! :
+        "images/default-cover.jpg";
 
     protected override async Task OnInitializedAsync()
     {
-        using var context = DbFactory.CreateDbContext();
-        Album ??= await context.Album.FirstOrDefaultAsync(m => m.Id == Id);
+        using var db = DbFactory.CreateDbContext();
 
-        if (Album is null)
+        artists = await db.Artist
+            .AsNoTracking()
+            .OrderBy(a => a.Name)
+            .ToListAsync();
+
+        Album = await db.Album.FirstOrDefaultAsync(a => a.Id == Id);
+        if (Album == null)
         {
             NavigationManager.NavigateTo("notfound");
+            return;
         }
     }
 
-    // To protect from overposting attacks, enable the specific properties you want to bind to.
-    // For more information, see https://learn.microsoft.com/aspnet/core/blazor/forms/#mitigate-overposting-attacks.
+    private async Task OnCoverSelected(InputFileChangeEventArgs e)
+    {
+        uploadError = "";
+        selectedCoverFile = null;
+        coverDataUrl = null;
+
+        var file = e.File;
+        if (file == null) return;
+
+        const long maxBytes = 5 * 1024 * 1024;
+
+        if (!file.ContentType.StartsWith("image/", StringComparison.OrdinalIgnoreCase))
+        {
+            uploadError = "Please choose an image file.";
+            return;
+        }
+
+        if (file.Size > maxBytes)
+        {
+            uploadError = "Image is too large. Max 5 MB.";
+            return;
+        }
+
+        selectedCoverFile = file;
+
+        using var stream = file.OpenReadStream(maxAllowedSize: maxBytes);
+        using var ms = new MemoryStream();
+        await stream.CopyToAsync(ms);
+        var base64 = Convert.ToBase64String(ms.ToArray());
+        coverDataUrl = $"data:{file.ContentType};base64,{base64}";
+    }
+
     private async Task UpdateAlbum()
     {
-        using var context = DbFactory.CreateDbContext();
-        context.Attach(Album!).State = EntityState.Modified;
+        if (Album == null)
+            return;
 
-        try
+        var authState = await AuthenticationStateProvider.GetAuthenticationStateAsync();
+        var user = authState.User;
+
+        var currentUserId =
+            user.FindFirst(ClaimTypes.NameIdentifier)?.Value
+            ?? user.FindFirst("userId")?.Value
+            ?? string.Empty;
+
+        if (string.IsNullOrWhiteSpace(currentUserId))
         {
-            await context.SaveChangesAsync();
-        }
-        catch (DbUpdateConcurrencyException)
-        {
-            if (!AlbumExists(Album!.Id))
-            {
-                NavigationManager.NavigateTo("notfound");
-            }
-            else
-            {
-                throw;
-            }
+            NavigationManager.NavigateTo("Account/Login");
+            return;
         }
 
-        NavigationManager.NavigateTo("/albums");
+        using var db = DbFactory.CreateDbContext();
+
+        var existing = await db.Album.AsNoTracking().FirstOrDefaultAsync(a => a.Id == Album.Id);
+        if (existing == null)
+        {
+            NavigationManager.NavigateTo("notfound");
+            return;
+        }
+
+        if (selectedCoverFile != null)
+        {
+            var savedPath = await SaveCoverToWwwRootAsync(selectedCoverFile);
+            if (!string.IsNullOrWhiteSpace(savedPath))
+            {
+                Album.Cover_Image = savedPath;
+            }
+        }
+
+        Album.Title = (Album.Title ?? "").Trim();
+        Album.Description = string.IsNullOrWhiteSpace(Album.Description) ? null : Album.Description.Trim();
+
+        Album.DateCreated = existing.DateCreated;
+        Album.CreatedBy = existing.CreatedBy;
+
+        Album.DateUpdated = DateTime.Now;
+        Album.UpdatedBy = currentUserId;
+
+        db.Attach(Album).State = EntityState.Modified;
+        await db.SaveChangesAsync();
+
+        NavigationManager.NavigateTo($"/albums/details?id={Album.Id}", forceLoad: false);
     }
 
-    private bool AlbumExists(int id)
+    private static async Task<string> SaveCoverToWwwRootAsync(IBrowserFile file)
     {
-        using var context = DbFactory.CreateDbContext();
-        return context.Album.Any(e => e.Id == id);
+        var ext = Path.GetExtension(file.Name);
+        if (string.IsNullOrWhiteSpace(ext)) ext = ".png";
+
+        var safeExt = ext.ToLowerInvariant();
+        var allowed = new HashSet<string> { ".png", ".jpg", ".jpeg", ".webp" };
+        if (!allowed.Contains(safeExt)) safeExt = ".png";
+
+        var fileName = $"{Guid.NewGuid():N}{safeExt}";
+        var folder = Path.Combine(Directory.GetCurrentDirectory(), "wwwroot", "images", "albums");
+        Directory.CreateDirectory(folder);
+
+        var absolutePath = Path.Combine(folder, fileName);
+
+        const long maxBytes = 5 * 1024 * 1024;
+        using var stream = file.OpenReadStream(maxAllowedSize: maxBytes);
+        using var fs = File.Create(absolutePath);
+        await stream.CopyToAsync(fs);
+
+        return $"images/albums/{fileName}";
     }
 }

@@ -71,7 +71,62 @@
     text-decoration: none;
 }
 
-/* Table layout */
+/* User grid view */
+.artist-grid-view {
+    display: grid;
+    grid-template-columns: repeat(auto-fill, minmax(220px, 1fr));
+    gap: 16px;
+}
+
+.artist-card {
+    text-decoration: none;
+    color: inherit;
+    background: rgba(255, 255, 255, 0.06);
+    border: 1px solid rgba(255, 255, 255, 0.10);
+    border-radius: 16px;
+    padding: 14px;
+    display: flex;
+    gap: 12px;
+    align-items: center;
+}
+
+    .artist-card:hover {
+        border-color: rgba(255, 255, 255, 0.18);
+    }
+
+.artist-card-img {
+    width: 54px;
+    height: 54px;
+    border-radius: 12px;
+    object-fit: cover;
+}
+
+.artist-card-meta {
+    display: flex;
+    flex-direction: column;
+    gap: 4px;
+    min-width: 0;
+}
+
+.artist-card-name {
+    font-size: 16px;
+    font-weight: 700;
+    color: #FFFFFF;
+    overflow: hidden;
+    text-overflow: ellipsis;
+    white-space: nowrap;
+}
+
+.artist-card-country {
+    font-size: 13px;
+    font-weight: 600;
+    color: rgba(255, 255, 255, 0.65);
+    overflow: hidden;
+    text-overflow: ellipsis;
+    white-space: nowrap;
+}
+
+/* Table layout (Admin) */
 .song-table {
     display: flex;
     flex-direction: column;
@@ -120,6 +175,7 @@
 .song-name {
     font-size: 17px;
     font-weight: 600;
+    color: #FFFFFF;
 }
 
 .song-artist {

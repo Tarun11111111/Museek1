@@ -252,3 +252,7 @@
         grid-auto-columns: minmax(190px, 190px);
     }
 }
+
+.chip {
+    text-decoration: none;
+}

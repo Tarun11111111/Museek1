@@ -126,7 +126,7 @@
 
 <style>
 
-    /* BACKGROUND MATCHES REGISTER PAGE */
+    /* FULL BACKGROUND */
     .login-wrapper {
         width: 100%;
         min-height: calc(100vh - 70px);
@@ -134,25 +134,28 @@
         background-attachment: scroll;
         display: flex;
         justify-content: center;
-        align-items: flex-start;
-        padding-top: 20px;
+        align-items: center;
+        padding: 28px 16px;
+        box-sizing: border-box;
     }
 
-    /* TRANSPARENT GLASS FORM */
+    /* BIGGER + RESPONSIVE FORM */
     .form-container {
-        width: 520px;
-        padding: 25px 30px 40px 30px;
+        width: min(520px, 94vw);
+        padding: 22px 24px 28px 24px;
         background: rgba(0, 0, 0, 0.55);
         backdrop-filter: blur(6px);
         border-radius: 16px;
         border: 1px solid rgba(255,255,255,0.12);
         color: white;
+        box-sizing: border-box;
     }
 
     .title {
-        font-size: 36px;
+        font-size: 34px;
         font-weight: 700;
-        margin-bottom: 25px;
+        margin-bottom: 18px;
+        line-height: 1.2;
         text-shadow: 0 1px 8px rgba(0,0,0,0.7);
     }
 
@@ -161,10 +164,11 @@
         background: rgba(22,22,22,0.85);
         border: 1px solid #333;
         border-radius: 12px;
-        padding: 14px 16px;
+        padding: 12px 14px;
         display: flex;
         align-items: center;
-        margin-bottom: 12px;
+        margin-bottom: 10px;
+        box-sizing: border-box;
     }
 
     .input-box {
@@ -193,7 +197,7 @@
         align-items: center;
         gap: 8px;
         margin-top: 6px;
-        margin-bottom: 12px;
+        margin-bottom: 10px;
         opacity: 0.9;
     }
 
@@ -206,19 +210,19 @@
     .login-btn {
         width: 100%;
         background: #00d27f;
-        padding: 16px;
+        padding: 14px;
         font-size: 18px;
         border-radius: 12px;
         color: black;
         border: none;
         cursor: pointer;
         font-weight: 600;
-        margin-top: 12px;
+        margin-top: 10px;
     }
 
     /* FOOTER */
     .login-footer {
-        margin-top: 20px;
+        margin-top: 16px;
         text-align: center;
         font-size: 15px;
         opacity: 0.85;

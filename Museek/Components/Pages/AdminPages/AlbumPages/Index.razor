@@ -1,43 +1,131 @@
 ﻿@page "/albums"
+@rendermode InteractiveServer
 @using Microsoft.EntityFrameworkCore
-@using Microsoft.AspNetCore.Components.QuickGrid
+@using System.Security.Claims
 @using Museek.Domain
 @using Museek.Data
-@implements IAsyncDisposable
-@inject IDbContextFactory<Museek.Data.MuseekContext> DbFactory
+@inject IDbContextFactory<MuseekContext> DbFactory
+@inject AuthenticationStateProvider AuthenticationStateProvider
+@inject NavigationManager NavigationManager
+@attribute [Authorize]
 
-<PageTitle>Index</PageTitle>
+<PageTitle>Albums</PageTitle>
 
-<h1>Index</h1>
+<div class="library-page">
+    <div class="page-head">
+        <div class="head-left">
+            <div class="page-title">@PageTitleText</div>
+            <div class="page-sub">@PageSubText</div>
+        </div>
 
-<p>
-    <a href="albums/create">Create New</a>
-</p>
+        <div class="head-actions">
+            @if (isAdmin)
+            {
+                <a class="btn" href="@CreateHref">+ New Album</a>
+            }
 
-<QuickGrid Class="table" Items="context.Album">
-    <PropertyColumn Property="album => album.Title" />
-    <PropertyColumn Property="album => album.Released_Year" />
-    <PropertyColumn Property="album => album.Cover_Image" />
-    <PropertyColumn Property="album => album.ArtistId" />
-    <PropertyColumn Property="album => album.DateCreated" />
-    <PropertyColumn Property="album => album.DateUpdated" />
-    <PropertyColumn Property="album => album.CreatedBy" />
-    <PropertyColumn Property="album => album.UpdatedBy" />
+            <a class="btn" href="@BackHref">Back</a>
+        </div>
+    </div>
 
-    <TemplateColumn Context="album">
-        <a href="@($"albums/edit?id={album.Id}")">Edit</a> |
-        <a href="@($"albums/details?id={album.Id}")">Details</a> |
-        <a href="@($"albums/delete?id={album.Id}")">Delete</a>
-    </TemplateColumn>
-</QuickGrid>
+    <div class="top-actions">
+        <div class="search-bar">
+            <img src="images/search.png" class="search-icon" />
+            <input type="text" placeholder="Search albums" @bind="searchText" />
+        </div>
+    </div>
+
+    @if (loading)
+    {
+        <div class="empty-row">Loading...</div>
+    }
+    else if (!FilteredAlbums.Any())
+    {
+        <div class="empty-row">No albums found.</div>
+    }
+    else
+    {
+        <div class="album-grid">
+            @foreach (var a in FilteredAlbums)
+            {
+                <a class="album-card" href="@($"/albums/details?id={a.Id}")">
+                    <img class="album-img"
+                         src="@(!string.IsNullOrWhiteSpace(a.Cover_Image) ? a.Cover_Image : "images/default-cover.jpg")" />
+                    <div class="album-meta">
+                        <div class="album-title">@a.Title</div>
+                        <div class="album-sub">
+                            @GetArtistName(a.ArtistId)
+                            @if (a.ReleasedDate.HasValue)
+                            {
+                                <span class="dot">•</span>
+                                <span>@a.ReleasedDate.Value.ToString("dd MMM yyyy")</span>
+                            }
+                        </div>
+                    </div>
+                </a>
+            }
+        </div>
+    }
+</div>
 
 @code {
-    private MuseekContext context = default!;
+    [SupplyParameterFromQuery] private int? ArtistId { get; set; }
 
-    protected override void OnInitialized()
+    private bool loading = true;
+    private bool isAdmin = false;
+
+    private string searchText = "";
+
+    private List<Album> albums = new();
+    private List<Artist> artists = new();
+
+    private string artistName = "";
+
+    private string PageTitleText =>
+        string.IsNullOrWhiteSpace(artistName) ? "Albums" : $"Albums. {artistName}";
+
+    private string PageSubText =>
+        isAdmin
+            ? "Create and manage albums. Add songs inside an album."
+            : "Browse albums and play songs.";
+
+    private string BackHref => isAdmin ? "/artists" : "/artists";
+
+    private string CreateHref =>
+        ArtistId.HasValue ? $"/albums/create?artistId={ArtistId.Value}" : "/albums/create";
+
+    protected override async Task OnInitializedAsync()
     {
-        context = DbFactory.CreateDbContext();
+        using var db = DbFactory.CreateDbContext();
+
+        var authState = await AuthenticationStateProvider.GetAuthenticationStateAsync();
+        var user = authState.User;
+        isAdmin = user.IsInRole("Administrator");
+
+        artists = await db.Artist.AsNoTracking().ToListAsync();
+
+        IQueryable<Album> q = db.Album.AsNoTracking();
+
+        if (ArtistId.HasValue && ArtistId.Value > 0)
+        {
+            q = q.Where(a => a.ArtistId == ArtistId.Value);
+            artistName = GetArtistName(ArtistId.Value);
+        }
+
+        albums = await q
+            .OrderByDescending(a => a.DateCreated)
+            .ToListAsync();
+
+        loading = false;
     }
 
-    public async ValueTask DisposeAsync() => await context.DisposeAsync();
+    private IEnumerable<Album> FilteredAlbums =>
+        string.IsNullOrWhiteSpace(searchText)
+            ? albums
+            : albums.Where(a =>
+                (a.Title ?? "").Contains(searchText.Trim(), StringComparison.OrdinalIgnoreCase)
+                || GetArtistName(a.ArtistId).Contains(searchText.Trim(), StringComparison.OrdinalIgnoreCase));
+
+    private string GetArtistName(int artistId) =>
+        artists.FirstOrDefault(x => x.Id == artistId)?.Name ?? "Unknown";
 }

@@ -2,6 +2,7 @@
 using Microsoft.EntityFrameworkCore;
 using Museek.Configurations.Entities;
 using Museek.Data;
+using Museek.Domain;
 
 namespace Museek.Data
 {
@@ -9,6 +10,7 @@ namespace Museek.Data
     {
 
         public DbSet<Museek.Domain.Album> Album { get; set; } = default!;
+        public DbSet<AlbumSong> AlbumSong { get; set; } = default!;
         public DbSet<Museek.Domain.Artist> Artist { get; set; } = default!;
         public DbSet<Museek.Domain.Playlist> Playlist { get; set; } = default!;
         public DbSet<Museek.Domain.PlaylistSong> PlaylistSong { get; set; } = default!;

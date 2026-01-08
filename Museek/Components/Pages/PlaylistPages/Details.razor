@@ -46,7 +46,15 @@ else
                     <a class="btn" href="@($"/playlists/edit?id={playlist.Id}")">Edit</a>
                     <a class="btn danger" href="@($"/playlists/delete?id={playlist.Id}")">Delete</a>
                     <button class="btn" @onclick="OpenAddSongsModal">+ Add Songs</button>
-                    <a class="btn" href="/userlibrary">Back</a>
+
+                    @if (isAdmin && playlist.IsCurated == true)
+                    {
+                        <a class="btn" href="/curatedplaylists">Back</a>
+                    }
+                    else
+                    {
+                        <a class="btn" href="/userlibrary">Back</a>
+                    }
                 }
                 else
                 {

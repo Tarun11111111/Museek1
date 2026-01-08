@@ -1,5 +1,4 @@
-﻿@* FILE: Pages/CuratedPlaylists/Index.razor (or your /curatedplaylists page) *@
-@page "/curatedplaylists"
+﻿@page "/curatedplaylists"
 @rendermode InteractiveServer
 @using Microsoft.EntityFrameworkCore
 @using Museek.Domain
@@ -10,21 +9,21 @@
 <PageTitle>Curated Playlists</PageTitle>
 
 <div class="library-page">
-    <h1 class="page-title">Curated Playlists</h1>
+    <h1 class="page-title">New</h1>
 
     <div class="top-actions">
         <div class="search-bar">
             <img src="images/search.png" class="search-icon" />
-            <input type="text" placeholder="Search curated playlists" @bind="searchText" />
+            <input type="text" placeholder="Search playlists" @bind="searchText" />
         </div>
 
-        <a href="/curatedplaylists/create" class="upload-btn">+ New Curated Playlist</a>
+        <a href="/curatedplaylists/create" class="upload-btn">+ New Playlist</a>
     </div>
 
     <div class="playlist-grid">
         @if (!FilteredPlaylists.Any())
         {
-            <div class="empty-row">No curated playlists found.</div>
+            <div class="empty-row">No playlists found.</div>
         }
         else
         {
