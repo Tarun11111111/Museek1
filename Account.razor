@@ -1,0 +1,116 @@
+﻿@page "/account"
+@using Microsoft.AspNetCore.Authorization
+@using Microsoft.AspNetCore.Identity
+@using Museek.Data
+@using System.ComponentModel.DataAnnotations
+
+@attribute [Authorize]
+@inject UserManager<MuseekUser> UserManager
+@inject AuthenticationStateProvider AuthenticationStateProvider
+@inject NavigationManager NavigationManager
+
+<div class="container mt-5 text-white">
+    <div class="row justify-content-center">
+        <div class="col-md-8">
+            <div class="card bg-dark border-secondary">
+                <div class="card-header border-secondary">
+                    <h3>My Account</h3>
+                </div>
+                <div class="card-body">
+                    @if (Input == null)
+                    {
+                        <p>Loading user details...</p>
+                    }
+                    else if (UpdateSuccess)
+                    {
+                        <div class="alert alert-success">Profile updated successfully!</div>
+                    }
+
+                    @if (Input != null)
+                    {
+                        <EditForm Model="Input" OnValidSubmit="UpdateProfileAsync" FormName="profileForm">
+                            <DataAnnotationsValidator />
+
+                            <div class="mb-3">
+                                <label class="form-label">First Name</label>
+                                <InputText @bind-Value="Input.FirstName" class="form-control bg-secondary text-white border-0" />
+                            </div>
+
+                            <div class="mb-3">
+                                <label class="form-label">Last Name</label>
+                                <InputText @bind-Value="Input.LastName" class="form-control bg-secondary text-white border-0" />
+                            </div>
+
+                            <div class="mb-3">
+                                <label class="form-label">Email</label>
+                                <input type="text" class="form-control bg-dark text-muted border-secondary" value="@UserEmail" disabled />
+                                <small class="text-muted">Email cannot be changed here.</small>
+                            </div>
+
+                            <button type="submit" class="btn btn-primary w-100">Save Changes</button>
+                        </EditForm>
+                    }
+                </div>
+            </div>
+        </div>
+    </div>
+</div>
+
+@code {
+    [SupplyParameterFromForm]
+    private InputModel? Input { get; set; }
+
+    private string? UserEmail;
+    private MuseekUser? CurrentUser;
+    private bool UpdateSuccess = false;
+
+    // Load user data when page opens
+    protected override async Task OnInitializedAsync()
+    {
+        // 1. Get the current user's ID
+        var authState = await AuthenticationStateProvider.GetAuthenticationStateAsync();
+        var userPrincipal = authState.User;
+
+        if (userPrincipal.Identity?.IsAuthenticated == true)
+        {
+            // 2. Fetch the full user object from Database
+            CurrentUser = await UserManager.GetUserAsync(userPrincipal);
+
+            if (CurrentUser != null)
+            {
+                UserEmail = CurrentUser.Email;
+
+                // 3. Fill the form with existing data
+                Input ??= new InputModel
+                {
+                    FirstName = CurrentUser.FirstName,
+                    LastName = CurrentUser.LastName
+                };
+            }
+        }
+    }
+
+    private async Task UpdateProfileAsync()
+    {
+        if (CurrentUser != null && Input != null)
+        {
+            // 4. Update the Database Object
+            CurrentUser.FirstName = Input.FirstName;
+            CurrentUser.LastName = Input.LastName;
+
+            var result = await UserManager.UpdateAsync(CurrentUser);
+
+            if (result.Succeeded)
+            {
+                UpdateSuccess = true;
+            }
+        }
+    }
+
+    // A simple class to hold form data
+    private class InputModel
+    {
+        public string? FirstName { get; set; }
+        public string? LastName { get; set; }
+    }
+}

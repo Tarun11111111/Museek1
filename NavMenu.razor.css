@@ -1,0 +1,147 @@
+﻿/* ... Keep your existing Left/Center CSS as is ... */
+.nav-wrapper {
+    display: flex;
+    align-items: center;
+    justify-content: space-between;
+    padding: 12px 40px;
+    background-color: #1b1b1b;
+}
+
+.nav-left {
+    display: flex;
+    align-items: center;
+    gap: 10px;
+}
+
+.logo-img {
+    width: 35px;
+    height: 35px;
+}
+
+.logo-text {
+    font-size: 24px;
+    color: #fff;
+    font-weight: 600;
+}
+
+.nav-center {
+    display: flex;
+    gap: 30px;
+    justify-content: center;
+    flex: 1;
+}
+
+    .nav-center a {
+        color: #aaa;
+        text-decoration: none;
+        font-size: 16px;
+        display: flex;
+        align-items: center;
+        gap: 6px;
+        padding: 6px 12px;
+        border-radius: 6px;
+    }
+
+        .nav-center a:hover, .nav-center a.active {
+            color: #fff;
+            background-color: #2a2a2a;
+        }
+
+.icon {
+    width: 18px;
+    height: 18px;
+}
+
+/* --- DROPDOWN CSS STARTS HERE --- */
+
+.nav-right {
+    display: flex;
+    align-items: center;
+    /* Ensure no overflow is hiding the menu */
+    overflow: visible;
+}
+
+/* 1. The Wrapper: Connects the name to the menu */
+.dropdown-wrapper {
+    position: relative;
+    display: inline-block;
+    cursor: pointer;
+    /* CRITICAL FIX: This padding bridges the gap. 
+       If you remove this, the menu will disappear when you move the mouse. */
+    padding-bottom: 15px;
+    margin-bottom: -15px; /* Pulls alignment back up so it doesn't look weird */
+}
+
+/* 2. The Trigger: How the name looks */
+.user-trigger {
+    display: flex;
+    align-items: center;
+    gap: 10px;
+    color: #fff;
+    transition: opacity 0.2s;
+}
+
+.dropdown-wrapper:hover .user-trigger {
+    opacity: 0.8; /* Slight fade when hovering */
+}
+
+.profile-icon {
+    width: 35px;
+    height: 35px;
+    border-radius: 50%;
+    object-fit: cover;
+}
+
+.username-text {
+    font-weight: 500;
+    font-size: 16px;
+}
+
+/* 3. The Menu Content */
+.dropdown-content {
+    /* Hide it by default */
+    display: none;
+    position: absolute;
+    right: 0;
+    /* Position it just below the padding area */
+    top: 100%;
+    background-color: #2a2a2a;
+    min-width: 200px;
+    box-shadow: 0px 8px 16px 0px rgba(0,0,0,0.5);
+    border-radius: 8px;
+    border: 1px solid #444;
+    padding: 8px 0;
+    /* Ensure it floats above everything else */
+    z-index: 9999;
+}
+
+/* 4. THE ACTION: Show when wrapper is hovered */
+.dropdown-wrapper:hover .dropdown-content {
+    display: block;
+}
+
+/* 5. Menu Items */
+.dropdown-item {
+    color: #ccc;
+    padding: 12px 16px;
+    text-decoration: none;
+    display: flex;
+    align-items: center;
+    font-size: 14px;
+    width: 100%;
+    background: none;
+    border: none;
+    text-align: left;
+    box-sizing: border-box;
+}
+
+    .dropdown-item:hover {
+        background-color: #3b3b3b;
+        color: white;
+    }
+
+.dropdown-divider {
+    border: 0;
+    border-top: 1px solid #444;
+    margin: 4px 0;
+}
