@@ -1,0 +1,146 @@
+﻿@page "/account"
+@using Microsoft.AspNetCore.Authorization
+@using Microsoft.AspNetCore.Identity
+@using Museek.Data
+@using System.ComponentModel.DataAnnotations
+@using Microsoft.EntityFrameworkCore
+@using System.Security.Claims
+
+@attribute [Authorize]
+@inject UserManager<MuseekUser> UserManager
+@inject AuthenticationStateProvider AuthenticationStateProvider
+@inject NavigationManager NavigationManager
+@inject IServiceScopeFactory ScopeFactory
+
+<div class="container mt-5 text-white">
+    <div class="row justify-content-center">
+        <div class="col-md-8">
+            <div class="card bg-dark border-secondary">
+                <div class="card-header border-secondary">
+                    <h3>My Account</h3>
+                </div>
+                <div class="card-body">
+                    @if (Input == null)
+                    {
+                        <p>Loading user details...</p>
+                    }
+                    else if (UpdateSuccess)
+                    {
+                        <div class="alert alert-success">Profile updated successfully!</div>
+                    }
+
+                    @if (Input != null)
+                    {
+                        <EditForm Model="Input" OnValidSubmit="UpdateProfileAsync" FormName="profileForm">
+                            <DataAnnotationsValidator />
+
+                            <div class="mb-3">
+                                <label class="form-label">First Name</label>
+                                <InputText @bind-Value="Input.FirstName" class="form-control bg-secondary text-white border-0" />
+                            </div>
+
+                            <div class="mb-3">
+                                <label class="form-label">Last Name</label>
+                                <InputText @bind-Value="Input.LastName" class="form-control bg-secondary text-white border-0" />
+                            </div>
+
+                            <div class="mb-3">
+                                <label class="form-label">Email</label>
+                                <input type="text" class="form-control bg-dark text-muted border-secondary" value="@UserEmail" disabled />
+                                <small class="text-muted">Email cannot be changed here.</small>
+                            </div>
+
+                            <button type="submit" class="btn btn-primary w-100">Save Changes</button>
+                        </EditForm>
+                    }
+                </div>
+            </div>
+        </div>
+    </div>
+</div>
+
+@code {
+    [SupplyParameterFromForm]
+    private InputModel? Input { get; set; }
+
+    private string? UserEmail;
+    private MuseekUser? CurrentUser;
+    private bool UpdateSuccess = false;
+
+    // Load user data when page opens
+    protected override async Task OnInitializedAsync()
+    {
+        var authState = await AuthenticationStateProvider.GetAuthenticationStateAsync();
+        var userPrincipal = authState.User;
+
+        if (userPrincipal.Identity?.IsAuthenticated == true)
+        {
+            // --- LOGIC SWAP START ---
+            // Instead of using UserManager (which might be cached/stale),
+            // we use the DIRECT DB CONTEXT method from your other file.
+
+            using (var scope = ScopeFactory.CreateScope())
+            {
+                var context = scope.ServiceProvider.GetRequiredService<MuseekContext>();
+                var userId = userPrincipal.FindFirst(ClaimTypes.NameIdentifier)?.Value;
+
+                if (userId != null)
+                {
+                    // "AsNoTracking" forces it to read the real file from the disk
+                    CurrentUser = await context.Users.AsNoTracking().FirstOrDefaultAsync(u => u.Id == userId);
+                }
+            }
+            // --- LOGIC SWAP END ---
+
+            if (CurrentUser != null)
+            {
+                UserEmail = CurrentUser.Email;
+
+                // Fill the form with the FRESH data we just fetched
+                Input ??= new InputModel
+                {
+                    FirstName = CurrentUser.FirstName,
+                    LastName = CurrentUser.LastName
+                };
+            }
+        }
+    }
+
+    private async Task UpdateProfileAsync()
+    {
+        // For saving, we ALSO want to be safe and force a direct update
+        if (CurrentUser != null && Input != null)
+        {
+            using (var scope = ScopeFactory.CreateScope())
+            {
+                var context = scope.ServiceProvider.GetRequiredService<MuseekContext>();
+
+                // 1. Fetch the user again to ensure we are updating the real record
+                var userToUpdate = await context.Users.FirstOrDefaultAsync(u => u.Id == CurrentUser.Id);
+
+                if (userToUpdate != null)
+                {
+                    // 2. Update fields
+                    userToUpdate.FirstName = Input.FirstName;
+                    userToUpdate.LastName = Input.LastName;
+
+                    // 3. Save directly to DB
+                    context.Users.Update(userToUpdate);
+                    await context.SaveChangesAsync();
+
+                    UpdateSuccess = true;
+
+                    // Optional: Refresh the page to prove data is saved
+                    // NavigationManager.NavigateTo("/account", forceLoad: true);
+                }
+            }
+        }
+    }
+
+    // A simple class to hold form data
+    private class InputModel
+    {
+        public string? FirstName { get; set; }
+        public string? LastName { get; set; }
+    }
+}
